@@ -2,20 +2,23 @@ import { RequestHandler } from "express";
 import * as ridesModel from "../models/rides.model.js";
 import { NewRide, RideFilters } from "../types/rides";
 
-export const createRide: RequestHandler<{}, {}, NewRide, {}> = (req, res) => {
+export const createRide: RequestHandler<{}, {}, NewRide, {}> = async (
+  req,
+  res
+) => {
   const ride = req.body;
-  const newRide = ridesModel.createRide(ride);
+  const newRide = await ridesModel.createRide(ride);
   res.json({ message: "Viaje creado exitosamente", data: newRide });
 };
 
-export const getAllRides: RequestHandler = (req, res) => {
+export const getAllRides: RequestHandler = async (req, res) => {
   try {
     const filters = {
-        platform: req.query.platform as string ,
-        from: req.query.from as string,
-        to: req.query.to as string
-    }
-    const allRides = ridesModel.getAllRides(filters);
+      platform: req.query.platform as string | undefined,
+      from: req.query.from as string | undefined,
+      to: req.query.to as string | undefined,
+    };
+    const allRides = await ridesModel.getAllRides(filters);
     res.json({ message: "Viajes obtenidos exitosamente", data: allRides });
   } catch (err: any) {
     console.error(err);
@@ -25,10 +28,15 @@ export const getAllRides: RequestHandler = (req, res) => {
   }
 };
 
-export const getRideById: RequestHandler = (req, res) => {
+export const getRideById: RequestHandler = async (req, res) => {
   try {
     const id = req.params.id;
-    const ride = ridesModel.getRideById(id);
+    const ride = await ridesModel.getRideById(id);
+    if (!ride) {
+      return res.status(404).json({
+        message: `No se encontró un viaje con el id ${req.params.id}`,
+      });
+    }
     res.json({ message: "Viaje obtenido exitosamente", data: ride });
   } catch (err: any) {
     console.error(err);
@@ -38,11 +46,16 @@ export const getRideById: RequestHandler = (req, res) => {
   }
 };
 
-export const deleteRide: RequestHandler = (req, res) => {
+export const deleteRide: RequestHandler = async (req, res) => {
   try {
     const id = req.params.id;
-    const deletedRide = ridesModel.deleteRide(id);
-    res.json({ message: "Viaje eliminado exitosamente", data: deletedRide });
+    const deletedRide = await ridesModel.deleteRide(id);
+    if (deletedRide.count === 0) {
+      return res.status(404).json({
+        message: `No se encontró un viaje con el id ${req.params.id}`,
+      });
+    }
+    res.json({ message: "Viaje eliminado exitosamente" });
   } catch (err: any) {
     console.error(err);
     res
@@ -51,12 +64,20 @@ export const deleteRide: RequestHandler = (req, res) => {
   }
 };
 
-export const updateRide: RequestHandler = (req, res) => {
+export const updateRide: RequestHandler = async (req, res) => {
   try {
-    const id = req.params.id
-    const ride = req.body
-    const updatedRide = ridesModel.updatedRide(id, ride)
-    res.json({message: "Viaje actualizado exitosamente", data: updatedRide})
+    const id = req.params.id;
+    const ride = req.body;
+    const updatedRide = await ridesModel.updatedRide(id, ride);
+    if (updatedRide.length === 0) {
+      return res.status(404).json({
+        message: `No se encontró un viaje con el id ${req.params.id}`,
+      });
+    }
+    res.json({
+      message: "Viaje actualizado exitosamente",
+      data: updatedRide[0],
+    });
   } catch (err: any) {
     console.error(err);
     res
@@ -64,5 +85,3 @@ export const updateRide: RequestHandler = (req, res) => {
       .json({ message: "Ha ocurrido un error", error: err.message });
   }
 };
-
-
