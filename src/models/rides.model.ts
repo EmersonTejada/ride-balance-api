@@ -1,8 +1,6 @@
 import { prisma } from "../prisma/index.js";
 import { NewRide, Ride, RideFilters, UpdateRide } from "../types/rides";
 
-let rides: Ride[] = [];
-
 export const createRide = async (ride: NewRide) => {
   const newRide = prisma.ride.create({
     data: {
@@ -57,7 +55,7 @@ export const updatedRide = async (RideId: string, ride: UpdateRide) => {
     },
     data: {
       amount: ride.amount,
-      platform: ride.platform
+      platform: ride.platform,
     },
   });
   return updatedRide;
