@@ -61,9 +61,11 @@ export const getUserProfile: RequestHandler = async (req, res) => {
     res.json({
       message: "Usuario Verificado",
       data: {
-        userId: user.userId,
-        email: user.email,
-        name: user.name,
+        user: {
+          id: user.userId,
+          email: user.email,
+          name: user.name,
+        },
       },
     });
   } catch (err) {
@@ -87,5 +89,5 @@ export const deleteUser: RequestHandler = async (req, res) => {
 
 export const logout: RequestHandler = async (req, res) => {
   res.clearCookie("access_token");
-  res.json({ message: "Logout exitoso" });
+  res.json({ message: "Logout exitoso", data: null });
 };

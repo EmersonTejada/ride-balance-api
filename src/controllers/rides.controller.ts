@@ -36,7 +36,7 @@ export const deleteRide: RequestHandler = async (req, res) => {
     if (deletedRide.count === 0) {
       throw new AppError(`No existe un viaje con el id ${id}`, 404)
     }
-    res.json({ message: "Viaje eliminado exitosamente" });
+    res.json({ message: "Viaje eliminado exitosamente", data: null });
 };
 
 export const updateRide: RequestHandler = async (req, res) => {
