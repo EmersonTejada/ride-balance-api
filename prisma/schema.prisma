@@ -13,9 +13,28 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  rides     Ride[]
+}
+
+enum Platform {
+  yummy
+  ridery
+  particular
+}
+
 model Ride {
   id        String   @id @default(uuid())
-  amount    Float
-  platform  String
+  amount    Decimal @db.Decimal(10, 2)
+  platform  Platform
   date      DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
