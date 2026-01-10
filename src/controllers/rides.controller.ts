@@ -7,8 +7,7 @@ export const createRide: RequestHandler<{}, {}, NewRide, {}> = async (
   req,
   res
 ) => {
-  const ride = req.body;
-  const newRide = await ridesModel.createRide(ride);
+  const newRide = await ridesModel.createRide(req.body, req.userId);
   res.json({ message: "Viaje creado exitosamente", data: newRide });
 };
 
@@ -18,13 +17,13 @@ export const getAllRides: RequestHandler = async (req, res) => {
       from: req.query.from as string | undefined,
       to: req.query.to as string | undefined,
     };
-    const allRides = await ridesModel.getAllRides(filters);
+    const allRides = await ridesModel.getAllRides(req.userId, filters);
     res.json({ message: "Viajes obtenidos exitosamente", data: allRides });
 };
 
 export const getRideById: RequestHandler = async (req, res) => {
   const id = req.params.id;
-  const ride = await ridesModel.getRideById(id);
+  const ride = await ridesModel.getRideById(id, req.userId);
   if (!ride) {
     throw new AppError(`No existe un viaje con el id ${id}`, 404)
   }
@@ -33,7 +32,7 @@ export const getRideById: RequestHandler = async (req, res) => {
 
 export const deleteRide: RequestHandler = async (req, res) => {
   const id = req.params.id;
-    const deletedRide = await ridesModel.deleteRide(id);
+    const deletedRide = await ridesModel.deleteRide(id, req.userId);
     if (deletedRide.count === 0) {
       throw new AppError(`No existe un viaje con el id ${id}`, 404)
     }
@@ -43,7 +42,7 @@ export const deleteRide: RequestHandler = async (req, res) => {
 export const updateRide: RequestHandler = async (req, res) => {
   const id = req.params.id;
     const ride = req.body;
-    const updatedRide = await ridesModel.updatedRide(id, ride);
+    const updatedRide = await ridesModel.updatedRide(id, req.userId, ride);
     if (updatedRide.length === 0) {
       throw new AppError(`No existe un viaje con el id ${id}`, 404)
     }

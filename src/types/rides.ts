@@ -1,11 +1,12 @@
 export interface Ride {
-    id: string 
+    id: string
     amount: number
     date: Date
-    platform: "Yummy" | "Ridery" | "Particular"
+    platform: "yummy" | "ridery" | "particular"
+    userId: string
 }
 
-export type NewRide = Omit<Ride, "id" | "date">
+export type NewRide = Omit<Ride, "id" | "date" | "userId">
 
 export type UpdateRide = Partial<Ride>
 
