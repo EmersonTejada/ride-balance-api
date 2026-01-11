@@ -88,6 +88,12 @@ export const deleteUser: RequestHandler = async (req, res) => {
 };
 
 export const logout: RequestHandler = async (req, res) => {
-  res.clearCookie("access_token");
+  console.log("Logout called, cookies before clear:", req.cookies);
+  res.clearCookie("access_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "none",
+  });
+  console.log("Cookie cleared");
   res.json({ message: "Logout exitoso", data: null });
 };
