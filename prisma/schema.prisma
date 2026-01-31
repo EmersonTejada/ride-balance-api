@@ -21,6 +21,7 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   rides     Ride[]
+  expenses  Expense[]
 }
 
 enum Platform {
@@ -37,4 +38,49 @@ model Ride {
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+enum ExpenseCategory {
+  fuel
+  maintenance
+  food
+  insurance
+  parking
+  phone
+  tolls
+  other
+}
+
+enum ExpenseSubcategory {
+  fuel_refill
+  
+  oil_change
+  oil_refill
+  repair
+  spare_part
+  tire
+  brake
+  battery
+
+  cleaning
+  accessory
+  unknown
+}
+
+model Expense {
+  id            String               @id @default(uuid())
+  amount        Decimal              @db.Decimal(10, 2)
+  description   String?
+  date          DateTime             @default(now())
+
+  category      ExpenseCategory
+  subcategory   ExpenseSubcategory?
+
+  userId        String
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}
+
+
 
