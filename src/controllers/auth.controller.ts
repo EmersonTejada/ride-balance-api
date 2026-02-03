@@ -38,7 +38,7 @@ export const login: RequestHandler<{}, {}, LoginUser, {}> = async (
   res
     .cookie("access_token", token, {
       httpOnly: true,
-      secure: process.env.VERCEL_ENV === "production",
+      secure: process.env.NODE_ENV === "production",
       sameSite: "none",
       maxAge: 1000 * 60 * 60,
     })
