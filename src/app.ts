@@ -5,6 +5,7 @@ import "dotenv/config";
 import { ridesRouter } from "./routes/rides.route.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { authRouter } from "./routes/auth.route.js";
+import { expensesRouter } from "./routes/expenses.route.js";
 
 const app = express();
 app.use(cors({
@@ -19,6 +20,7 @@ const PORT = process.env.PORT;
 
 app.use("/api/rides", ridesRouter)
 app.use("/api/auth", authRouter)
+app.use("/api/expenses", expensesRouter)
 app.use(errorHandler)
 
 app.listen(PORT, (error) => {

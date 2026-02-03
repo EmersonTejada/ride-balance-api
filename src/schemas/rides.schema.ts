@@ -8,10 +8,10 @@ export const ridePlatformSchema = z.preprocess(
   z.enum(["yummy", "ridery", "particular"])
 );
 
-export const createRideSchema = z.object({
+export const createRideSchema = z.strictObject({
     amount: z.coerce.number().positive(),
     platform: ridePlatformSchema
-}).strict()
+})
 
 export const updateRideSchema = createRideSchema.partial().refine(
   (data) => Object.keys(data).length > 0,
