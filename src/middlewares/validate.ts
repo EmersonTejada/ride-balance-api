@@ -38,7 +38,7 @@ export const validateBody =
 
   export const validateQuery =
   <T>(schema: z.ZodType<T>): RequestHandler =>
-  (req, _res, next) => {
+  (req, res, next) => {
     const result = schema.safeParse(req.query);
 
     if (!result.success) {
@@ -49,6 +49,6 @@ export const validateBody =
       return next(new AppError("Error de validación", 400, errors));
     }
 
-    req.query = result.data as any;
+    res.locals.query = result.data;
     next();
   };
