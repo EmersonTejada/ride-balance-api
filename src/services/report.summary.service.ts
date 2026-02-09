@@ -21,7 +21,7 @@ export const getReportSummary = async (
      ======================= */
   const days = differenceInCalendarDays(end, start); 
 
-  if (days <= 0) {
+  if (days <= 0 || days > 7) {
     throw new Error("Invalid date range");
   }
 
