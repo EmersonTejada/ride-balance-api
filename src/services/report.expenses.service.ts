@@ -6,16 +6,12 @@ import { ExpensesReport } from "../types/expensesReport.js";
 export const getExpensesReport = async (
   userId: string,
   from: string,
-  to: string
+  to: string,
 ): Promise<ExpensesReport> => {
-  /* =======================
-     Normalizar fechas
-     ======================= */
+  
   const start = new Date(from);
-  start.setUTCHours(0, 0, 0, 0);
 
   const end = new Date(to);
-  end.setUTCHours(23, 59, 59, 999);
 
   const days = differenceInCalendarDays(end, start);
 
@@ -31,9 +27,7 @@ export const getExpensesReport = async (
     },
   };
 
-  /* =======================
-     KPIs
-     ======================= */
+ 
   const expensesAgg = await prisma.expense.aggregate({
     where,
     _sum: { amount: true },
@@ -41,9 +35,6 @@ export const getExpensesReport = async (
 
   const totalExpenses = decimalToNumber(expensesAgg._sum.amount);
 
-  /* =======================
-     Gastos por día
-     ======================= */
   const expensesByDayRaw = await prisma.expense.groupBy({
     by: ["date"],
     where,
@@ -56,9 +47,6 @@ export const getExpensesReport = async (
     amount: decimalToNumber(item._sum.amount),
   }));
 
-  /* =======================
-     Gastos por categoría
-     ======================= */
   const expensesByCategoryRaw = await prisma.expense.groupBy({
     by: ["category"],
     where,
@@ -67,7 +55,7 @@ export const getExpensesReport = async (
 
   const totalForPercentage = expensesByCategoryRaw.reduce(
     (sum, item) => sum + decimalToNumber(item._sum.amount),
-    0
+    0,
   );
 
   const expensesByCategory = expensesByCategoryRaw.map((item) => {
@@ -82,9 +70,7 @@ export const getExpensesReport = async (
     };
   });
 
-  /* =======================
-     Respuesta
-     ======================= */
+  
   return {
     period: {
       from: start,

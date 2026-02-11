@@ -4,11 +4,13 @@ import * as ridesReportService from "../services/report.rides.service.js";
 import * as expensesReportService from "../services/report.expenses.service.js";
 export const getSummary: RequestHandler = async (req, res) => {
   const { from, to } = res.locals.query;
+  const userTimeZone = req.headers["x-timezone"] as string
 
   const summaryReport = await summaryReportService.getReportSummary(
     req.userId,
     from,
     to,
+    userTimeZone
   );
   res.json({ message: "Reporte obtenido exitosamente", data: summaryReport });
 };

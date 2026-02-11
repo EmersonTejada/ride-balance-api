@@ -1,7 +1,8 @@
 export interface ReportPeriod {
-  from: Date;
-  to: Date;
+  from: string;
+  to: string;
   days: number;
+  timezone: string
 }
 
 export interface ReportKPIs {

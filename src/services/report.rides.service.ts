@@ -6,16 +6,12 @@ import { RidesReport } from "../types/ridesReport.js";
 export const getRidesReport = async (
   userId: string,
   from: string,
-  to: string
+  to: string,
 ): Promise<RidesReport> => {
-  /* =======================
-     Normalizar fechas
-     ======================= */
+
   const start = new Date(from);
-  start.setUTCHours(0, 0, 0, 0);
 
   const end = new Date(to);
-  end.setUTCHours(23, 59, 59, 999);
 
   const days = differenceInCalendarDays(end, start);
 
@@ -31,9 +27,7 @@ export const getRidesReport = async (
     },
   };
 
-  /* =======================
-     KPIs
-     ======================= */
+
   const ridesAgg = await prisma.ride.aggregate({
     where,
     _sum: { amount: true },
@@ -42,12 +36,9 @@ export const getRidesReport = async (
 
   const totalIncome = decimalToNumber(ridesAgg._sum.amount);
   const totalRides = ridesAgg._count.id ?? 0;
-  const avgIncomePerRide =
-    totalRides > 0 ? totalIncome / totalRides : 0;
+  const avgIncomePerRide = totalRides > 0 ? totalIncome / totalRides : 0;
 
-  /* =======================
-     Ingresos por día
-     ======================= */
+
   const incomeByDayRaw = await prisma.ride.groupBy({
     by: ["date"],
     where,
@@ -60,9 +51,7 @@ export const getRidesReport = async (
     amount: decimalToNumber(item._sum.amount),
   }));
 
-  /* =======================
-     Ingresos por plataforma
-     ======================= */
+ 
   const incomeByPlatformRaw = await prisma.ride.groupBy({
     by: ["platform"],
     where,
@@ -71,7 +60,7 @@ export const getRidesReport = async (
 
   const totalForPercentage = incomeByPlatformRaw.reduce(
     (sum, item) => sum + decimalToNumber(item._sum.amount),
-    0
+    0,
   );
 
   const incomeByPlatform = incomeByPlatformRaw.map((item) => {
@@ -86,9 +75,7 @@ export const getRidesReport = async (
     };
   });
 
-  /* =======================
-     Respuesta
-     ======================= */
+  
   return {
     period: {
       from: start,
