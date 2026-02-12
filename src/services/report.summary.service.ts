@@ -1,24 +1,17 @@
 import { prisma } from "../prisma/index.js";
-import { differenceInCalendarDays, endOfDay, endOfISOWeek, startOfDay, startOfISOWeek } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 import { ReportSummary } from "../types/report.js";
 import { decimalToNumber } from "../utils/decimal.js";
-import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 export const getReportSummary = async (
   userId: string,
   from: string,
   to: string,
-  userTimeZone: string
+  userTimeZone: string,
 ): Promise<ReportSummary> => {
-  // 1. Obtener "ahora" en zona del usuario
-  const fromUTC = new Date(from);
-  const toUTC = new Date(to);
-  const fromInUserZone = toZonedTime(fromUTC, userTimeZone);
-  const toInUserZone = toZonedTime(toUTC, userTimeZone);
-
-  
-  const startInUserZone = startOfDay(fromInUserZone);
-  const endInUserZone = endOfDay(toInUserZone);
+  const startInUserZone = new Date(`${from}T00:00:00`);
+  const endInUserZone = new Date(`${to}T23:59:59.999`);
 
   const days = differenceInCalendarDays(endInUserZone, startInUserZone) + 1;
 
@@ -44,7 +37,6 @@ export const getReportSummary = async (
     },
   };
 
-
   const [ridesAgg, expensesAgg] = await Promise.all([
     prisma.ride.aggregate({
       where: ridesWhere,
@@ -65,20 +57,26 @@ export const getReportSummary = async (
   const netIncome = totalIncome - totalExpenses;
   const avgIncomePerRide = totalRides > 0 ? totalIncome / totalRides : 0;
 
-  
-  const incomeByDayRaw = await prisma.ride.groupBy({
-    by: ["date"],
-    where: ridesWhere,
-    _sum: { amount: true },
-    orderBy: { date: "asc" },
-  });
+  const incomeByDayRaw = await prisma.$queryRaw<{ day: Date; total: number }[]>`
+SELECT 
+  DATE_TRUNC(
+    'day',
+    date AT TIME ZONE 'UTC' AT TIME ZONE ${userTimeZone}
+  ) AS day,
+  SUM(amount) AS total
+FROM "Ride"
+WHERE "userId" = ${userId}
+  AND date >= ${startUtc}
+  AND date <= ${endUtc}
+GROUP BY day
+ORDER BY day ASC;
+`;
 
   const incomeByDay = incomeByDayRaw.map((item) => ({
-    date: item.date.toISOString(), // yyyy-mm-dd
-    amount: decimalToNumber(item._sum.amount),
+    date: item.day.toISOString().split("T")[0],
+    amount: Number(item.total),
   }));
 
- 
   const expensesByCategoryRaw = await prisma.expense.groupBy({
     by: ["category"],
     where: expensesWhere,
@@ -103,7 +101,6 @@ export const getReportSummary = async (
         : 0,
   }));
 
- 
   const incomeByPlatformRaw = await prisma.ride.groupBy({
     by: ["platform"],
     where: ridesWhere,
@@ -128,13 +125,12 @@ export const getReportSummary = async (
         : 0,
   }));
 
- 
   return {
     period: {
       from: formatInTimeZone(startUtc, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
       to: formatInTimeZone(endUtc, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
       days,
-      timezone: userTimeZone
+      timezone: userTimeZone,
     },
     kpis: {
       totalIncome,

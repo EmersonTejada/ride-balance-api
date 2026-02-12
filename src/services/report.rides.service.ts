@@ -2,31 +2,33 @@ import { prisma } from "../prisma/index.js";
 import { differenceInCalendarDays } from "date-fns";
 import { decimalToNumber } from "../utils/decimal.js";
 import { RidesReport } from "../types/ridesReport.js";
+import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 export const getRidesReport = async (
   userId: string,
   from: string,
   to: string,
+  userTimeZone: string,
 ): Promise<RidesReport> => {
+  const startInUserZone = new Date(`${from}T00:00:00`);
+  const endInUserZone = new Date(`${to}T23:59:59.999`);
 
-  const start = new Date(from);
-
-  const end = new Date(to);
-
-  const days = differenceInCalendarDays(end, start);
+  const days = differenceInCalendarDays(endInUserZone, startInUserZone) + 1;
 
   if (days <= 0 || days > 7) {
     throw new Error("Invalid date range");
   }
 
+  const startUtc = fromZonedTime(startInUserZone, userTimeZone);
+  const endUtc = fromZonedTime(endInUserZone, userTimeZone);
+
   const where = {
     userId,
     date: {
-      gte: start,
-      lte: end,
+      gte: startUtc,
+      lte: endUtc,
     },
   };
-
 
   const ridesAgg = await prisma.ride.aggregate({
     where,
@@ -38,20 +40,26 @@ export const getRidesReport = async (
   const totalRides = ridesAgg._count.id ?? 0;
   const avgIncomePerRide = totalRides > 0 ? totalIncome / totalRides : 0;
 
-
-  const incomeByDayRaw = await prisma.ride.groupBy({
-    by: ["date"],
-    where,
-    _sum: { amount: true },
-    orderBy: { date: "asc" },
-  });
+  const incomeByDayRaw = await prisma.$queryRaw<{ day: Date; total: number }[]>`
+SELECT 
+  DATE_TRUNC(
+    'day',
+    date AT TIME ZONE 'UTC' AT TIME ZONE ${userTimeZone}
+  ) AS day,
+  SUM(amount) AS total
+FROM "Ride"
+WHERE "userId" = ${userId}
+  AND date >= ${startUtc}
+  AND date <= ${endUtc}
+GROUP BY day
+ORDER BY day ASC;
+`;
 
   const incomeByDay = incomeByDayRaw.map((item) => ({
-    date: item.date.toISOString().split("T")[0],
-    amount: decimalToNumber(item._sum.amount),
+    date: item.day.toISOString().split("T")[0],
+    amount: Number(item.total),
   }));
 
- 
   const incomeByPlatformRaw = await prisma.ride.groupBy({
     by: ["platform"],
     where,
@@ -75,12 +83,12 @@ export const getRidesReport = async (
     };
   });
 
-  
   return {
     period: {
-      from: start,
-      to: end,
+      from: formatInTimeZone(startUtc, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
+      to: formatInTimeZone(endUtc, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
       days,
+      timezone: userTimeZone,
     },
     kpis: {
       totalIncome,

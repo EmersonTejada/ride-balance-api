@@ -17,20 +17,24 @@ export const getSummary: RequestHandler = async (req, res) => {
 
 export const getRidesReport: RequestHandler = async (req, res) => {
   const { from, to } = res.locals.query;
+  const userTimeZone = req.headers["x-timezone"] as string
   const expensesReport = await ridesReportService.getRidesReport(
     req.userId,
     from,
     to,
+    userTimeZone
   );
   res.json({ message: "Reporte obtenido exitosamente", data: expensesReport });
 };
 
 export const getExpensesReport: RequestHandler = async (req, res) => {
   const { from, to } = res.locals.query;
+  const userTimeZone = req.headers["x-timezone"] as string
   const ridesReport = await expensesReportService.getExpensesReport(
     req.userId,
     from,
     to,
+    userTimeZone
   );
   res.json({ message: "Reporte obtenido exitosamente", data: ridesReport });
 };

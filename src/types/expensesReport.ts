@@ -1,9 +1,7 @@
+import { ReportPeriod } from "./report";
+
 export interface ExpensesReport {
-  period: {
-    from: Date;
-    to: Date;
-    days: number;
-  };
+  period: ReportPeriod;
   kpis: {
     totalExpenses: number;
   };
