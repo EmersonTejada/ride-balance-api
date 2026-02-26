@@ -1,6 +1,8 @@
 import {
   differenceInCalendarDays,
+  eachDayOfInterval,
   endOfISOWeek,
+  format,
   startOfISOWeek,
 } from "date-fns";
 import { prisma } from "../prisma/index.js";
@@ -79,10 +81,22 @@ GROUP BY day
 ORDER BY day ASC;
 `;
 
-  const incomeByDay = incomeByDayRaw.map((item) => ({
-    date: item.day.toISOString().split("T")[0],
-    amount: Number(item.total),
-  }));
+  // Crear mapa de ingresos por día
+  const incomeMap = new Map<string, number>();
+  incomeByDayRaw.forEach((item) => {
+    const dateKey = item.day.toISOString().split("T")[0];
+    incomeMap.set(dateKey, Number(item.total));
+  });
+
+  // Generar todos los días de la semana con 0 para los que no tienen ingresos
+  const allDays = eachDayOfInterval({ start: startInUserZone, end: endInUserZone });
+  const incomeByDay = allDays.map((day) => {
+    const dateKey = format(day, "yyyy-MM-dd");
+    return {
+      date: dateKey,
+      amount: incomeMap.get(dateKey) ?? 0,
+    };
+  });
 
   return {
     period: {
