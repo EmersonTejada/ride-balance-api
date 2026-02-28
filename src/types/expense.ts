@@ -22,7 +22,7 @@ type ExpenseSubcategory =
 
 export interface Expense {
   id: string;
-  amount: number;
+  amount: number | string;
   description?: string;
   date: Date;
   category: ExpenseCategory;
