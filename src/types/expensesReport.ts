@@ -3,17 +3,17 @@ import { ReportPeriod } from "./report";
 export interface ExpensesReport {
   period: ReportPeriod;
   kpis: {
-    totalExpenses: number;
+    totalExpenses: number | string;
   };
   charts: {
     expensesByDay: {
       date: string;
-      amount: number;
+      amount: number | string;
     }[];
     expensesByCategory: {
       category: string;
-      amount: number;
-      percentage: number;
+      amount: number | string;
+      percentage: number | string;
     }[];
   };
 }

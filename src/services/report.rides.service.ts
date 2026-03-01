@@ -57,7 +57,7 @@ ORDER BY day ASC;
 
   const incomeByDay = incomeByDayRaw.map((item) => ({
     date: item.day.toISOString().split("T")[0],
-    amount: Number(item.total),
+    amount: Number(item.total).toFixed(2),
   }));
 
   const incomeByPlatformRaw = await prisma.ride.groupBy({
@@ -75,11 +75,11 @@ ORDER BY day ASC;
     const amount = decimalToNumber(item._sum.amount);
     return {
       platform: item.platform,
-      amount,
+      amount: amount.toFixed(2),
       percentage:
         totalForPercentage > 0
-          ? Number(((amount / totalForPercentage) * 100).toFixed(2))
-          : 0,
+          ? ((amount / totalForPercentage) * 100).toFixed(2)
+          : "0.00",
     };
   });
 
@@ -91,9 +91,9 @@ ORDER BY day ASC;
       timezone: userTimeZone,
     },
     kpis: {
-      totalIncome,
+      totalIncome: totalIncome.toFixed(2),
       totalRides,
-      avgIncomePerRide,
+      avgIncomePerRide: avgIncomePerRide.toFixed(2),
     },
     charts: {
       incomeByDay,

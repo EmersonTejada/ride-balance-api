@@ -10,27 +10,26 @@ export const getExpensesReport = async (
   to: string,
   userTimeZone: string,
 ): Promise<ExpensesReport> => {
- const startInUserZone = new Date(`${from}T00:00:00`);
-   const endInUserZone = new Date(`${to}T23:59:59.999`);
- 
-   const days = differenceInCalendarDays(endInUserZone, startInUserZone) + 1;
- 
-   if (days <= 0 || days > 7) {
-     throw new Error("Invalid date range");
-   }
- 
-   const startUtc = fromZonedTime(startInUserZone, userTimeZone);
-   const endUtc = fromZonedTime(endInUserZone, userTimeZone);
+  const startInUserZone = new Date(`${from}T00:00:00`);
+  const endInUserZone = new Date(`${to}T23:59:59.999`);
+
+  const days = differenceInCalendarDays(endInUserZone, startInUserZone) + 1;
+
+  if (days <= 0 || days > 7) {
+    throw new Error("Invalid date range");
+  }
+
+  const startUtc = fromZonedTime(startInUserZone, userTimeZone);
+  const endUtc = fromZonedTime(endInUserZone, userTimeZone);
 
   const where = {
     userId,
     date: {
-      gte:  startUtc,
+      gte: startUtc,
       lte: endUtc,
     },
   };
 
- 
   const expensesAgg = await prisma.expense.aggregate({
     where,
     _sum: { amount: true },
@@ -38,7 +37,9 @@ export const getExpensesReport = async (
 
   const totalExpenses = decimalToNumber(expensesAgg._sum.amount);
 
-  const expensesByDayRaw = await prisma.$queryRaw<{ day: Date; total: number }[]>`
+  const expensesByDayRaw = await prisma.$queryRaw<
+    { day: Date; total: number }[]
+  >`
 SELECT 
   DATE_TRUNC(
     'day',
@@ -55,7 +56,7 @@ ORDER BY day ASC;
 
   const expensesByDay = expensesByDayRaw.map((item) => ({
     date: item.day.toISOString().split("T")[0],
-    amount: Number(item.total),
+    amount: Number(item.total).toFixed(2),
   }));
 
   const expensesByCategoryRaw = await prisma.expense.groupBy({
@@ -73,15 +74,14 @@ ORDER BY day ASC;
     const amount = decimalToNumber(item._sum.amount);
     return {
       category: item.category,
-      amount,
+      amount: amount.toFixed(2),
       percentage:
         totalForPercentage > 0
-          ? Number(((amount / totalForPercentage) * 100).toFixed(2))
-          : 0,
+          ? ((amount / totalForPercentage) * 100).toFixed(2)
+          : "0.00",
     };
   });
 
-  
   return {
     period: {
       from: formatInTimeZone(startUtc, userTimeZone, "yyyy-MM-dd'T'HH:mm:ss"),
@@ -90,7 +90,7 @@ ORDER BY day ASC;
       timezone: userTimeZone,
     },
     kpis: {
-      totalExpenses,
+      totalExpenses: totalExpenses.toFixed(2),
     },
     charts: {
       expensesByDay,

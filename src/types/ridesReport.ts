@@ -7,8 +7,8 @@ export interface RidesReport {
     incomeByDay: AmountByDate[];
     incomeByPlatform: {
       platform: string;
-      amount: number;
-      percentage: number;
+      amount: number | string;
+      percentage: number | string;
     }[];
   };
 }

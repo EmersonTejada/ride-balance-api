@@ -89,12 +89,15 @@ ORDER BY day ASC;
   });
 
   // Generar todos los días de la semana con 0 para los que no tienen ingresos
-  const allDays = eachDayOfInterval({ start: startInUserZone, end: endInUserZone });
+  const allDays = eachDayOfInterval({
+    start: startInUserZone,
+    end: endInUserZone,
+  });
   const incomeByDay = allDays.map((day) => {
     const dateKey = format(day, "yyyy-MM-dd");
     return {
       date: dateKey,
-      amount: incomeMap.get(dateKey) ?? 0,
+      amount: Number(incomeMap.get(dateKey) ?? 0).toFixed(2),
     };
   });
 
@@ -106,11 +109,11 @@ ORDER BY day ASC;
       timezone: userTimeZone,
     },
     kpis: {
-      totalIncome,
-      totalExpenses,
+      totalIncome: totalIncome.toFixed(2),
+      totalExpenses: totalExpenses.toFixed(2),
       totalRides,
-      netIncome,
-      avgIncomePerRide,
+      netIncome: netIncome.toFixed(2),
+      avgIncomePerRide: avgIncomePerRide.toFixed(2),
     },
     charts: {
       incomeByDay,

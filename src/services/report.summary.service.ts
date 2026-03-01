@@ -74,7 +74,7 @@ ORDER BY day ASC;
 
   const incomeByDay = incomeByDayRaw.map((item) => ({
     date: item.day.toISOString().split("T")[0],
-    amount: Number(item.total),
+    amount: Number(item.total).toFixed(2),
   }));
 
   const expensesByCategoryRaw = await prisma.expense.groupBy({
@@ -93,12 +93,17 @@ ORDER BY day ASC;
     0,
   );
 
+  const expensesByCategoryFormatted = expensesByCategory.map((item) => ({
+    ...item,
+    amount: item.amount.toFixed(2),
+  }));
+
   const expensesByCategoryPercentage = expensesByCategory.map((item) => ({
     category: item.category,
     percentage:
       expensesTotalForPercentage > 0
-        ? Number(((item.amount / expensesTotalForPercentage) * 100).toFixed(2))
-        : 0,
+        ? ((item.amount / expensesTotalForPercentage) * 100).toFixed(2)
+        : "0.00",
   }));
 
   const incomeByPlatformRaw = await prisma.ride.groupBy({
@@ -116,13 +121,11 @@ ORDER BY day ASC;
     platform: item.platform,
     percentage:
       incomeTotalForPercentage > 0
-        ? Number(
-            (
-              (decimalToNumber(item._sum.amount) / incomeTotalForPercentage) *
-              100
-            ).toFixed(2),
-          )
-        : 0,
+        ? (
+            (decimalToNumber(item._sum.amount) / incomeTotalForPercentage) *
+            100
+          ).toFixed(2)
+        : "0.00",
   }));
 
   return {
@@ -133,15 +136,15 @@ ORDER BY day ASC;
       timezone: userTimeZone,
     },
     kpis: {
-      totalIncome,
-      totalExpenses,
+      totalIncome: totalIncome.toFixed(2),
+      totalExpenses: totalExpenses.toFixed(2),
       totalRides,
-      netIncome,
-      avgIncomePerRide,
+      netIncome: netIncome.toFixed(2),
+      avgIncomePerRide: avgIncomePerRide.toFixed(2),
     },
     charts: {
       incomeByDay,
-      expensesByCategory,
+      expensesByCategory: expensesByCategoryFormatted,
       expensesByCategoryPercentage,
       incomeByPlatformPercentage,
     },

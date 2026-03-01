@@ -2,35 +2,35 @@ export interface ReportPeriod {
   from: string;
   to: string;
   days: number;
-  timezone: string
+  timezone: string;
 }
 
 export interface ReportKPIs {
-  totalIncome: number;
-  totalExpenses: number;
+  totalIncome: number | string;
+  totalExpenses: number | string;
   totalRides: number;
-  netIncome: number;
-  avgIncomePerRide: number;
+  netIncome: number | string;
+  avgIncomePerRide: number | string;
 }
 
 export interface AmountByDate {
   date: string;
-  amount: number;
+  amount: number | string;
 }
 
 export interface AmountByCategory {
   category: string;
-  amount: number;
+  amount: number | string;
 }
 
 export interface PercentageByCategory {
   category: string;
-  percentage: number;
+  percentage: number | string;
 }
 
 export interface PercentageByPlatform {
   platform: string;
-  percentage: number;
+  percentage: number | string;
 }
 
 export interface ReportSummary {
