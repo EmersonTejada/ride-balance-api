@@ -27,6 +27,7 @@ export const getAllRides = async (userId: string, filters?: RideFilters) => {
 
   const result = await prisma.ride.findMany({
     where,
+    orderBy: { date: "desc" },
   });
 
   return result;
@@ -52,7 +53,11 @@ export const deleteRide = async (RideId: string, userId: string) => {
   return deletedRide;
 };
 
-export const updatedRide = async (RideId: string, userId: string, ride: UpdateRide) => {
+export const updatedRide = async (
+  RideId: string,
+  userId: string,
+  ride: UpdateRide,
+) => {
   const updatedRide = await prisma.ride.updateManyAndReturn({
     where: {
       id: RideId,

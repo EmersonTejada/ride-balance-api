@@ -34,7 +34,10 @@ export const getAllExpenses = async (
   if (filters?.to) {
     where.date = { ...where.date, lte: new Date(filters.to) };
   }
-  const result = await prisma.expense.findMany({ where });
+  const result = await prisma.expense.findMany({
+    where,
+    orderBy: { date: "desc" },
+  });
   return result;
 };
 
@@ -42,12 +45,11 @@ export const getExpenseById = async (expenseId: string, userId: string) => {
   const expense = await prisma.expense.findFirst({
     where: {
       id: expenseId,
-      userId: userId
-
-    }
-  })
-  return expense
-}
+      userId: userId,
+    },
+  });
+  return expense;
+};
 
 export const deleteExpense = async (id: string, userId: string) => {
   const deletedExpense = await prisma.expense.deleteMany({
