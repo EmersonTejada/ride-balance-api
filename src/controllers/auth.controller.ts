@@ -7,7 +7,7 @@ import { AppError } from "../errors/AppError.js";
 
 export const createUser: RequestHandler<{}, {}, NewUser, {}> = async (
   req,
-  res
+  res,
 ) => {
   const user = req.body;
   const newUser = await userModel.createUser(user);
@@ -16,7 +16,7 @@ export const createUser: RequestHandler<{}, {}, NewUser, {}> = async (
 
 export const login: RequestHandler<{}, {}, LoginUser, {}> = async (
   req,
-  res
+  res,
 ) => {
   const loginUser = req.body;
   const user = await userModel.findUserByEmail(loginUser.email);
@@ -25,7 +25,7 @@ export const login: RequestHandler<{}, {}, LoginUser, {}> = async (
   }
   const isPasswordValid = await bcrypt.compare(
     loginUser.password,
-    user.password
+    user.password,
   );
   if (!isPasswordValid) {
     throw new AppError("Contraseña incorrecta", 401);
@@ -33,22 +33,18 @@ export const login: RequestHandler<{}, {}, LoginUser, {}> = async (
   const token = jwt.sign(
     { userId: user.id, email: user.email, name: user.name },
     process.env.JWT_SECRET!,
-    { expiresIn: "1h" }
+    { expiresIn: "1h" },
   );
-  res
-    .cookie("access_token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 1000 * 60 * 60,
-    })
-    .json({
-      message: "Login exitoso",
-    });
+  res.json({
+    message: "Login exitoso",
+    token,
+  });
 };
 
 export const getUserProfile: RequestHandler = async (req, res) => {
-  const token = req.cookies.access_token;
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+
   if (!token) {
     throw new AppError("No autenticado", 401);
   }
@@ -75,7 +71,7 @@ export const getUserProfile: RequestHandler = async (req, res) => {
 
 export const updateUser: RequestHandler<{}, {}, UpdateUser, {}> = async (
   req,
-  res
+  res,
 ) => {
   const updatedUser = await userModel.updateUser(req.userId, req.body);
   res.json({ message: "Usuario actualizado exitosamente", data: updatedUser });
@@ -83,17 +79,9 @@ export const updateUser: RequestHandler<{}, {}, UpdateUser, {}> = async (
 
 export const deleteUser: RequestHandler = async (req, res) => {
   const deletedUser = await userModel.deleteUser(req.userId);
-  res.clearCookie("access_token");
   res.json({ message: "Usuario eliminado exitosamente", data: deletedUser });
 };
 
 export const logout: RequestHandler = async (req, res) => {
-  console.log("Logout called, cookies before clear:", req.cookies);
-  res.clearCookie("access_token", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
-  });
-  console.log("Cookie cleared");
   res.json({ message: "Logout exitoso", data: null });
 };

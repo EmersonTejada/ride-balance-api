@@ -11,12 +11,16 @@ declare global {
 }
 
 export const authenticate: RequestHandler = (req, res, next) => {
-  const token = req.cookies.access_token;
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(" ")[1];
+
   if (!token) {
     throw new AppError("Token no proporcionado", 401);
   }
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      userId: string;
+    };
     req.userId = decoded.userId;
     next();
   } catch (error) {
