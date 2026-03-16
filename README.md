@@ -1,6 +1,11 @@
 # Ride Balance API
 
+[![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitLab-FC6D26?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/EmersonTejada/ride-balance)
+[![Hosted on](https://img.shields.io/badge/Hosted_on-AWS_EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](http://3.22.168.33:3000)
+
 API RESTful para la gestión financiera de conductores de plataformas de ride-sharing. Permite registrar viajes, gastos, generar reportes y visualizar dashboards con métricas de ingresos y rentabilidad.
+
+> **Este proyecto utiliza GitLab CI/CD para el despliegue automático en AWS EC2.** Puedes ver la configuración del pipeline [aquí en GitLab](https://gitlab.com/EmersonTejada/ride-balance).
 
 ## 📋 Descripción
 
@@ -11,9 +16,34 @@ Ride Balance API es una aplicación backend diseñada específicamente para cond
 - **Reportes y analytics**: Resúmenes financieros, análisis por período y plataforma
 - **Dashboard semanal**: Vista consolidada de métricas clave de la semana actual
 
-## 🏗️ Arquitectura
+## 🔴 Live Demo (AWS EC2)
 
-La API sigue una arquitectura modular basada en Express.js con TypeScript:
+¡Prueba la API en vivo! Está desplegada y corriendo en un contenedor de Docker dentro de una instancia EC2:
+
+👉 **[http://3.22.168.33:3000](http://3.22.168.33:3000)**
+
+*(Pronto disponible con dominio propio)*
+
+---
+
+## 🏗️ Arquitectura de la Aplicación
+
+Los datos viajan de manera eficiente y segura a través de las siguientes capas:
+
+```mermaid
+graph LR
+    A[React \n Frontend] -->|Peticiones HTTP/JSON| B(Express.js \n API / Backend)
+    B -->|Prisma Client| C{Supabase \n PostgreSQL}
+```
+
+- **Frontend**: SPA construida en React (Consumidor principal).
+- **Backend**: Servidor Express con validación Zod y autenticación JWT.
+- **ORM**: Prisma para garantizar la seguridad de tipos entre TypeScript y la BD.
+- **Base de Datos**: PostgreSQL alojada remotamente en Supabase.
+
+### 🗂️ Estructura de Carpetas
+
+La API sigue una arquitectura modular:
 
 ```
 src/
@@ -60,11 +90,13 @@ src/
 - **PostgreSQL**: 14.0 o superior
 - **npm** o **yarn**
 
-## 📥 Instalación
+## 📥 Instalación Clásica (Manual)
+
+Si deseas el entorno tradicional de Node.js:
 
 1. **Clonar el repositorio**:
 ```bash
-git clone <url-del-repositorio>
+git clone https://github.com/EmersonTejada/ride-balance.git
 cd ride-balance-api
 ```
 
@@ -74,18 +106,11 @@ npm install
 ```
 
 3. **Configurar variables de entorno**:
-   Crear un archivo `.env` en la raíz del proyecto:
+   Crear un archivo `.env` en la raíz del proyecto (basado en `.env.example`):
 ```env
-# Puerto del servidor
 PORT=3000
-
-# Secret para JWT (usar una cadena aleatoria segura)
 JWT_SECRET=tu-secreto-jwt-muy-seguro
-
-# URL de conexión a PostgreSQL
 DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/ride_balance
-
-# Entorno (development/production)
 NODE_ENV=development
 ```
 
@@ -103,8 +128,33 @@ npm run dev
 6. **Ejecutar en producción**:
 ```bash
 npm run build
-npm run start
+npm start
 ```
+
+## 🐳 Quick Start (Docker Compose)
+
+La forma recomendada y más rápida de levantar el proyecto de forma local (ideal para si se suma otro desarrollador) es utilizando Docker.
+
+1. Asegúrate de tener **Docker** y **Docker Compose** instalados.
+2. Clona el repositorio y crea tu archivo `.env`.
+3. Para iniciar el entorno de desarrollo local con live-reloading activado:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+¡Y listo! La API estará disponible en `http://localhost:3000`.
+
+## 🔄 Pipeline CI/CD (GitLab)
+
+El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con 3 etapas principales:
+
+1. **Build**: Construye la imagen de Docker basada en Alpine.
+2. **Test**: Valida el código compilado usando Jest y ES Modules.
+3. **Deploy**: Despliega automáticamente (Continuos Deployment) en una instancia remota de AWS EC2 mediante SSH.
+
+*(Estado en tiempo real del Pipeline)*
+[![pipeline status](https://gitlab.com/EmersonTejada/ride-balance/badges/main/pipeline.svg)](https://gitlab.com/EmersonTejada/ride-balance/-/commits/main)
 
 ## 📡 Scripts Disponibles
 
