@@ -19,9 +19,10 @@ COPY package.json package-lock.json ./
 # 1. Instalamos dependencias de producción
 RUN npm ci --omit=dev
 
-# 2. COPIAMOS LA CARPETA PRISMA (Esto es lo que faltaba)
+# 2. COPIAMOS LA CARPETA PRISMA y la configuración
 # La necesitamos para las migraciones en el deploy
 COPY prisma ./prisma/
+COPY prisma.config.ts ./
 
 # 3. Copiamos los archivos generados y compilados desde el builder
 COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
