@@ -1,0 +1,26 @@
+FROM node:20-alpine
+
+# Establece el directorio de trabajo dentro del contenedor
+WORKDIR /app
+
+# Copia los archivos de manifiesto de dependencias
+COPY package.json package-lock.json ./
+
+# Instala todas las dependencias (incluyendo devDependencies para nodemon y typescript)
+RUN npm ci
+
+# Copia la carpeta Prisma 
+COPY prisma ./prisma/
+
+# Genera el cliente de Prisma
+RUN npx prisma generate
+
+# Copia el resto del código fuente 
+# (Nota: al correr el contenedor, debes montar tu directorio local como volumen para que nodemon detecte los cambios. Ej: -v .:/app)
+COPY . .
+
+# Exponemos el puerto de la API
+EXPOSE 3000
+
+# Comando para ejecutar las migraciones y luego la aplicación en modo desarrollo usando nodemon
+CMD ["sh", "-c", "npx prisma migrate deploy && npm run dev"]
