@@ -13,13 +13,17 @@ RUN npm run build
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+
 COPY package.json package-lock.json ./
 
-# Instalamos solo dependencias de producción (@prisma/client sí se instala aquí)
+# 1. Instalamos dependencias de producción
 RUN npm ci --omit=dev
 
-# COPIAMOS el cliente generado desde el builder (ajusta la ruta según tu proyecto)
-# Según tus logs anteriores, lo generas en ./src/generated/prisma
+# 2. COPIAMOS LA CARPETA PRISMA (Esto es lo que faltaba)
+# La necesitamos para las migraciones en el deploy
+COPY prisma ./prisma/
+
+# 3. Copiamos los archivos generados y compilados desde el builder
 COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
 COPY --from=builder /app/dist ./dist
 
