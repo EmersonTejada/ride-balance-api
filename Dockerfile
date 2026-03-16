@@ -1,47 +1,27 @@
 # Etapa 1: Build
 FROM node:20-alpine AS builder
-
 WORKDIR /app
-
-# Copia los archivos de manifiesto de dependencias
 COPY package.json package-lock.json ./
-
-# Instala todas las dependencias
 RUN npm ci
-
-# Copia la carpeta Prisma y genera el cliente
 COPY prisma ./prisma/
+# Generamos el cliente en la carpeta personalizada que definiste
 RUN npx prisma generate
-
-# Copia el resto del código fuente
 COPY . .
-
-# Construye la aplicación (compila TypeScript a JavaScript)
 RUN npm run build
 
 # Etapa 2: Producción
 FROM node:20-alpine
-
 WORKDIR /app
-
-# Definir variables de entorno para producción
 ENV NODE_ENV=production
-
-# Copiar configuración de package
 COPY package.json package-lock.json ./
 
-# Instalar solo las dependencias de producción
+# Instalamos solo dependencias de producción (@prisma/client sí se instala aquí)
 RUN npm ci --omit=dev
 
-# Copiar la carpeta Prisma y generar el cliente
-COPY prisma ./prisma/
-RUN npx prisma generate
-
-# Copiar los archivos compilados desde la etapa de build
+# COPIAMOS el cliente generado desde el builder (ajusta la ruta según tu proyecto)
+# Según tus logs anteriores, lo generas en ./src/generated/prisma
+COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
 COPY --from=builder /app/dist ./dist
 
-# Exponer el puerto de la API
 EXPOSE 3000
-
-# Comando para iniciar la aplicación
 CMD ["npm", "start"]
