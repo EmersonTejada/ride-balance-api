@@ -41,9 +41,9 @@ deploy_to_prod:
       docker pull $IMAGE_NAME &&
       docker stop ride-balance-api || true &&
       docker rm ride-balance-api || true &&
-      
+
       docker run --rm -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' $IMAGE_NAME npx prisma migrate deploy &&
-      
-      docker run -d --name ride-balance-api --restart always -p 3000:3000 -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' -e JWT_SECRET='${PRODUCTION_JWT_SECRET}' -e NODE_ENV='production' $IMAGE_NAME &&
+
+      docker run -d --name ride-balance-api --restart always -p 3000:3000 -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' -e JWT_SECRET='${PRODUCTION_JWT_SECRET}' -e NODE_ENV='production' -e PORT='${PORT}' $IMAGE_NAME &&
       docker image prune -f
       "
