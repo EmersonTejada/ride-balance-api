@@ -2,6 +2,9 @@
 
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitLab-FC6D26?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/EmersonTejada/ride-balance)
 [![Hosted on](https://img.shields.io/badge/Hosted_on-AWS_EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](http://3.22.168.33:3000)
+[![Pipeline Status](https://img.shields.io/gitlab/pipeline-status/EmersonTejada/ride-balance?branch=main&style=for-the-badge)](https://gitlab.com/EmersonTejada/ride-balance/-/commits/main)
+![Prisma](https://img.shields.io/badge/Prisma-v7-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
 
 API RESTful para la gestión financiera de conductores de plataformas de ride-sharing. Permite registrar viajes, gastos, generar reportes y visualizar dashboards con métricas de ingresos y rentabilidad.
 
@@ -9,7 +12,7 @@ API RESTful para la gestión financiera de conductores de plataformas de ride-sh
 
 ## 📋 Descripción
 
-Ride Balance API es una aplicación backend diseñada específicamente para conductores de servicios como Yummy, Ridery y Particular. La API proporciona funcionalidades completas para:
+Ride Balance API es una aplicación backend diseñada específicamente para conductores de servicios como Yummy, Ridery y Uber. La API proporciona funcionalidades completas para:
 
 - **Gestión de ingresos**: Registro y seguimiento de viajes por plataforma
 - **Control de gastos**: Categorización de gastos operativos (combustible, mantenimiento, etc.)
@@ -166,20 +169,20 @@ El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con 3
 
 ## 🔐 Autenticación
 
-La API utiliza autenticación basada en JWT (JSON Web Tokens). El token se gestiona mediante cookies httpOnly por seguridad.
+La API utiliza autenticación basada en JWT (JSON Web Tokens). El token se envía al cliente en el cuerpo de la respuesta JSON tras un login exitoso y debe ser incluido en las cabeceras de autorizaciones subsecuentes.
 
 ### Flujo de Autenticación
 
-1. **Login**: Envía credenciales y recibe una cookie con el token
-2. **Middleware**: Cada endpoint protegido verifica el token
-3. **Logout**: Limpia la cookie de autenticación
+1. **Login**: Envía credenciales y recibe el token JWT en la respuesta.
+2. **Middleware**: Cada endpoint protegido requiere el token en la cabecera HTTP.
+3. **Logout**: El cliente debe eliminar el token de su almacenamiento local (localStorage, SecureStore, etc).
 
 ### Encabezados Requeridos
 
-Para endpoints protegidos, el navegador envía automáticamente la cookie. Para clientes HTTP:
+Para endpoints protegidos, el cliente HTTP debe enviar el token usando el esquema `Bearer`:
 
 ```http
-Cookie: access_token=tu-jwt-token
+Authorization: Bearer tu-jwt-token
 ```
 
 ### Header de Zona Horaria
@@ -244,10 +247,11 @@ X-Timezone: America/Caracas
 **Respuesta exitosa (200)**:
 ```json
 {
-  "message": "Login exitoso"
+  "message": "Login exitoso",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
 }
 ```
-*Establece una cookie `access_token` con el JWT*
+*El cliente debe guardar este token y enviarlo en la cabecera `Authorization`*
 
 **Códigos de error**:
 - 401: Usuario no existe o contraseña incorrecta
@@ -776,7 +780,7 @@ La API utiliza una estructura consistente para el manejo de errores:
 
 - **Contraseñas**: Hasheadas con bcrypt (10 rounds de sal)
 - **Tokens JWT**: Expiran en 1 hora
-- **Cookies**: httpOnly, secure (producción), sameSite
+- **Autorización**: Validación requerida del esquema Bearer
 - **Validación**: Todos los inputs son validados con Zod
 - **SQL Injection**: Previsto mediante Prisma ORM
 
