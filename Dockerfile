@@ -23,7 +23,7 @@ RUN npm ci --omit=dev
 # La necesitamos para las migraciones en el deploy
 COPY prisma ./prisma/
 COPY prisma.config.ts ./
-
+RUN npx prisma generate
 # 3. Copiamos los archivos generados y compilados desde el builder
 COPY --from=builder /app/src/generated/prisma ./src/generated/prisma
 COPY --from=builder /app/dist ./dist
