@@ -7,7 +7,12 @@
     "build": "npx prisma generate && tsc",
     "start": "node ./dist/server.js",
     "dev": "nodemon",
-    "test": "npx prisma generate && tsc --noEmit && NODE_OPTIONS='--experimental-vm-modules' jest"
+    "test": "npx prisma generate && tsc --noEmit && NODE_OPTIONS='--experimental-vm-modules' jest",
+    "docker:dev": "docker compose -f docker-compose.dev.yml up --build",
+    "docker:stop": "docker compose -f docker-compose.dev.yml down",
+    "docker:logs": "docker compose -f docker-compose.dev.yml logs -f",
+    "docker:logs:api": "docker compose -f docker-compose.dev.yml logs -f api",
+    "docker:logs:db": "docker compose -f docker-compose.dev.yml logs -f db"
   },
   "keywords": [],
   "author": "",
