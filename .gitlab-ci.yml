@@ -1,12 +1,26 @@
 stages:
-  - build
   - test
+  - build
   - deploy
 
 variables:
-  IMAGE_NAME: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG
+  IMAGE_STAGING: $CI_REGISTRY_IMAGE:staging
+  IMAGE_PROD: $CI_REGISTRY_IMAGE:latest
 
-build_api:
+test_api:
+  stage: test
+  image: node:20-slim
+  script:
+    - apt-get update -y && apt-get install -y openssl
+    - npm ci
+    - npx prisma generate
+    - npm test
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+build_staging:
   stage: build
   image: docker:28.2.2
   services:
@@ -14,21 +28,35 @@ build_api:
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build -t $IMAGE_NAME .
-    - docker push $IMAGE_NAME
+    - docker build -t $IMAGE_STAGING .
+    - docker push $IMAGE_STAGING
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'develop'
 
-test_api:
-  stage: test
-  image: node:20-alpine
+build_production:
+  stage: build
+  image: docker:28.2.2
+  services:
+    - docker:28.2.2-dind
+  before_script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - npm ci
-    - npm test
+    - docker build -t $IMAGE_PROD .
+    - docker push $IMAGE_PROD
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
 
-deploy_to_prod:
+deploy_staging:
+  stage: deploy
+  script:
+    - echo "Desplegando a servidor de pruebas (Staging)"
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'develop'
+  environment: staging
+
+deploy_production:
   stage: deploy
   image: alpine:latest
-  only:
-    - main
   before_script:
     - apk add --no-cache openssh-client
     - eval $(ssh-agent -s)
@@ -38,12 +66,16 @@ deploy_to_prod:
   script:
     - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
       docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
-      docker pull $IMAGE_NAME &&
+      docker pull $IMAGE_PROD &&
       docker stop ride-balance-api || true &&
       docker rm ride-balance-api || true &&
 
-      docker run --rm -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' $IMAGE_NAME npx prisma migrate deploy &&
+      docker run --rm -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' $IMAGE_PROD npx prisma migrate deploy &&
+      docker run -d --name ride-balance-api --restart always -p 3000:3000 -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' -e JWT_SECRET='${PRODUCTION_JWT_SECRET}' -e NODE_ENV='production' -e PORT='${PORT}' $IMAGE_PROD &&
 
-      docker run -d --name ride-balance-api --restart always -p 3000:3000 -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' -e JWT_SECRET='${PRODUCTION_JWT_SECRET}' -e NODE_ENV='production' -e PORT='${PORT}' $IMAGE_NAME &&
       docker image prune -f
       "
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+  environment: production
+  when: manual
