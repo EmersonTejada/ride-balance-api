@@ -56,8 +56,6 @@ deploy_staging:
 
 deploy_production:
   stage: deploy
-  tags: 
-    - docker
   image: alpine:latest
   before_script:
     - apk add --no-cache openssh-client
