@@ -75,11 +75,11 @@ deploy_production:
       export PRODUCTION_JWT_SECRET=$PRODUCTION_JWT_SECRET &&
       export PORT=$PORT &&
 
-      docker-compose pull &&
+      docker compose pull &&
 
-      docker-compose run --rm ride-balance-api npx prisma migrate deploy &&
+      docker compose run --rm ride-balance-api npx prisma migrate deploy &&
 
-      docker-compose up -d &&
+      docker compose up -d &&
 
       docker image prune -f
       "
