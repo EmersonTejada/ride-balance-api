@@ -56,6 +56,8 @@ deploy_staging:
 
 deploy_production:
   stage: deploy
+  tags: 
+    - docker
   image: alpine:latest
   before_script:
     - apk add --no-cache openssh-client
@@ -64,19 +66,33 @@ deploy_production:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
+    - scp -o StrictHostKeyChecking=no docker-compose.yml nginx.conf $SERVER_USER@$SERVER_IP:~/
+
     - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
+
       docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
-      docker pull $IMAGE_PROD &&
-      docker run --rm -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' $IMAGE_PROD npx prisma migrate deploy &&
 
-      docker stop ride-balance-api || true &&
-      docker rm ride-balance-api || true &&
+      export IMAGE_PROD=$IMAGE_PROD &&
+      export PRODUCTION_DATABASE_URL=$PRODUCTION_DATABASE_URL &&
+      export PRODUCTION_JWT_SECRET=$PRODUCTION_JWT_SECRET &&
+      export PORT=$PORT &&
 
-      docker run -d --name ride-balance-api --restart always -p 3000:3000 -e DATABASE_URL='${PRODUCTION_DATABASE_URL}' -e JWT_SECRET='${PRODUCTION_JWT_SECRET}' -e NODE_ENV='production' -e PORT='${PORT}' $IMAGE_PROD &&
+      
+      docker-compose pull &&
+
+      docker-compose run --rm ride-balance-api npx prisma migrate deploy &&
+
+      docker-compose up -d &&
 
       docker image prune -f
       "
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
-  environment: production
-  when: manual
+      when: manual
+
+    - when: never  
+
+  environment: 
+    name: production
+    url: http://$SERVER_IP
+  
