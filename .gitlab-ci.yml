@@ -91,5 +91,5 @@ deploy_production:
 
   environment: 
     name: production
-    url: http://$SERVER_IP
+    url: https://ridebalance.com
   
