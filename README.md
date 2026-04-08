@@ -1,7 +1,7 @@
 # Ride Balance API
 
 [![CI/CD Pipeline](https://img.shields.io/badge/CI%2FCD-GitLab-FC6D26?style=for-the-badge&logo=gitlab&logoColor=white)](https://gitlab.com/EmersonTejada/ride-balance)
-[![Hosted on](https://img.shields.io/badge/Hosted_on-AWS_EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](http://3.22.168.33:3000)
+[![Hosted on](https://img.shields.io/badge/Hosted_on-AWS_EC2-FF9900?style=for-the-badge&logo=amazon-aws&logoColor=white)](https://ridebalance.com)
 [![Pipeline Status](https://img.shields.io/gitlab/pipeline-status/EmersonTejada/ride-balance?branch=main&style=for-the-badge)](https://gitlab.com/EmersonTejada/ride-balance/-/commits/main)
 ![Prisma](https://img.shields.io/badge/Prisma-v7-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
@@ -21,11 +21,9 @@ Ride Balance API es una aplicación backend diseñada específicamente para cond
 
 ## 🔴 Live Demo (AWS EC2)
 
-¡Prueba la API en vivo! Está desplegada y corriendo en un contenedor de Docker dentro de una instancia EC2:
+¡Prueba la API en vivo! Está desplegada en una instancia EC2 de AWS corriendo en Docker, utilizando Nginx como proxy inverso y certificados de seguridad SSL de Let's Encrypt:
 
-👉 **[http://3.22.168.33:3000](http://3.22.168.33:3000)**
-
-*(Pronto disponible con dominio propio)*
+👉 **[https://ridebalance.com](https://ridebalance.com)**
 
 ---
 
@@ -35,11 +33,13 @@ Los datos viajan de manera eficiente y segura a través de las siguientes capas:
 
 ```mermaid
 graph LR
-    A[React \n Frontend] -->|Peticiones HTTP/JSON| B(Express.js \n API / Backend)
+    A[React \n Frontend] -->|HTTPS| N[Nginx \n Reverse Proxy]
+    N -->|HTTP:3000| B(Express.js \n API / Backend)
     B -->|Prisma Client| C{Supabase \n PostgreSQL}
 ```
 
 - **Frontend**: SPA construida en React (Consumidor principal).
+- **Proxy Inverso**: Nginx para manejar certificados SSL y enrutar las peticiones seguras al contendor de la API.
 - **Backend**: Servidor Express con validación Zod y autenticación JWT.
 - **ORM**: Prisma para garantizar la seguridad de tipos entre TypeScript y la BD.
 - **Base de Datos**: PostgreSQL alojada remotamente en Supabase.
@@ -66,7 +66,7 @@ src/
 
 ## 🚀 Características
 
-- **Autenticación segura**: JWT con cookies httpOnly
+- **Autenticación segura**: JWT mediante Authorization Bearer Header
 - **Validación robusta**: Esquemas Zod para validación de datos
 - **Base de datos**: PostgreSQL con Prisma ORM
 - **TypeScript**: Tipado estático completo
@@ -85,7 +85,6 @@ src/
 | bcrypt | Hashing de contraseñas |
 | date-fns | Manipulación de fechas |
 | cors | Configuración de CORS |
-| cookie-parser | Parseo de cookies |
 
 ## 🔧 Requisitos del Sistema
 
@@ -139,22 +138,27 @@ npm start
 La forma recomendada y más rápida de levantar el proyecto de forma local (ideal para si se suma otro desarrollador) es utilizando Docker.
 
 1. Asegúrate de tener **Docker** y **Docker Compose** instalados.
-2. Clona el repositorio y crea tu archivo `.env`.
-3. Para iniciar el entorno de desarrollo local con live-reloading activado:
+2. Clona el repositorio y crea tu archivo `.env` tomando como ejemplo `.env.example`.
+3. Para iniciar el entorno de desarrollo local (Base de datos Postgres + API con live-reloading usando nodemon):
 
 ```bash
-docker compose -f docker-compose.dev.yml up -d
+npm run docker:dev
 ```
 
-¡Y listo! La API estará disponible en `http://localhost:3000`.
+O si prefieres usar el comando de Docker Compose en segundo plano (`-d`):
+```bash
+docker compose -f docker-compose.dev.yml up --build -d
+```
+
+¡Y listo! La API estará disponible localmente en el puerto definido en tu `.env` (generalmente `http://localhost:3000`).
 
 ## 🔄 Pipeline CI/CD (GitLab)
 
 El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con 3 etapas principales:
 
-1. **Build**: Construye la imagen de Docker basada en Alpine.
-2. **Test**: Valida el código compilado usando Jest y ES Modules.
-3. **Deploy**: Despliega automáticamente (Continuos Deployment) en una instancia remota de AWS EC2 mediante SSH.
+1. **Test**: Ejecuta y valida la suite de pruebas unitarias/integración de la aplicación usando Jest, y el emulador VM de node.
+2. **Build**: Construye en paralelo la imagen de Docker para los entornos y los sube al Container Registry de GitLab.
+3. **Deploy**: Despliega automáticamente en una instancia de AWS EC2 mediante SSH. Se encarga de descargar las imágenes, aplicar las migraciones con Prisma y reiniciar los servicios (API y Nginx Proxy).
 
 *(Estado en tiempo real del Pipeline)*
 [![pipeline status](https://gitlab.com/EmersonTejada/ride-balance/badges/main/pipeline.svg)](https://gitlab.com/EmersonTejada/ride-balance/-/commits/main)
@@ -166,6 +170,10 @@ El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con 3
 | `npm run dev` | Inicia el servidor con hot-reload usando nodemon |
 | `npm run build` | Compila TypeScript a JavaScript |
 | `npm run start` | Ejecuta la aplicación compilada |
+| `npm run test` | Ejecuta la suite de pruebas con Jest |
+| `npm run docker:dev` | Inicia el entorno Docker de desarrollo (API + DB local) |
+| `npm run docker:stop`| Detiene los servicios de Docker local en desarrollo |
+| `npm run docker:logs`| Muestra los logs en vivo de los contenedores Docker dev |
 
 ## 🔐 Autenticación
 
