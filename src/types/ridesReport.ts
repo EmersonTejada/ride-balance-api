@@ -1,4 +1,4 @@
-import { AmountByDate, ReportKPIs, ReportPeriod } from "./report";
+import { AmountByDate, ReportKPIs, ReportPeriod } from "./report.js";
 
 export interface RidesReport {
   period: ReportPeriod;

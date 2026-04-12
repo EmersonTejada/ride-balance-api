@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import * as ridesModel from "../models/rides.model.js";
-import { NewRide, RideFilters } from "../types/rides";
+import { NewRide, RideFilters } from "../types/rides.js";
 import { AppError } from "../errors/AppError.js";
 
 export const createRide: RequestHandler<{}, {}, NewRide, {}> = async (

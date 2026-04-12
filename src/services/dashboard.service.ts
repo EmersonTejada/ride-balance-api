@@ -6,7 +6,7 @@ import {
   startOfISOWeek,
 } from "date-fns";
 import { prisma } from "../prisma/index.js";
-import { WeeklyDashboard } from "../types/weeklyDashboard";
+import { WeeklyDashboard } from "../types/weeklyDashboard.js";
 import { decimalToNumber } from "../utils/decimal.js";
 import { formatInTimeZone, fromZonedTime, toZonedTime } from "date-fns-tz";
 
