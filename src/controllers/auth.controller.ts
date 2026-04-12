@@ -1,7 +1,7 @@
 import { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
-import { LoginUser, NewUser, UpdateUser } from "../types/user";
+import { LoginUser, NewUser, UpdateUser } from "../types/user.js";
 import * as userModel from "../models/auth.model.js";
 import { AppError } from "../errors/AppError.js";
 

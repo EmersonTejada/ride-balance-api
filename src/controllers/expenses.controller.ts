@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { NewExpense, UpdateExpense } from "../types/expense";
+import { NewExpense, UpdateExpense } from "../types/expense.js";
 import * as expensesModel from "../models/expenses.model.js";
 
 export const createExpense: RequestHandler<{}, {}, NewExpense, {}> = async (
