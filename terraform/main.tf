@@ -16,6 +16,21 @@ resource "aws_ec2_managed_prefix_list" "cloudflare_list" {
   }
 }
 
+data "cloudflare_zone" "my_zone" {
+  filter = {
+    name = "ridebalance.com"
+  }
+}
+
+resource "cloudflare_dns_record" "api_dns" {
+  zone_id = data.cloudflare_zone.my_zone.id
+  name    = "@" 
+  content = aws_instance.ride_balance_server.public_ip 
+  type    = "A"
+  proxied = true
+  ttl     = 1 
+}
+
 resource "aws_security_group" "ride_balance_sg" {
   name        = "ride-balance-sg"
   description = "Ride Balance Security Group"
