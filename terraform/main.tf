@@ -72,7 +72,7 @@ resource "aws_instance" "ride_balance_server" {
   }
 
   user_data = <<-EOF
-              #!/bin/bas
+              #!/bin/bash
               apt-get update
               apt-get install -y ca-certificates curl
 
