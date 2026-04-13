@@ -19,6 +19,9 @@ variables:
     entrypoint: [""]
   before_script:
     - cd terraform
+    - echo "Validando presencia de credenciales..."
+    - if [ -z "$AWS_ACCESS_KEY_ID" ]; then echo "Access Key está VACÍA"; else echo "Access Key tiene contenido"; fi
+    - echo "La región detectada es -> $AWS_DEFAULT_REGION"
     - terraform init
 
 tf_validate:
