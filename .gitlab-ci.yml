@@ -123,6 +123,10 @@ deploy_production:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
+    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "mkdir -p ~/ssl"
+    - scp -o StrictHostKeyChecking=no $SSL_CERT $SERVER_USER@$SERVER_IP:~/ssl/cert.pem
+    - scp -o StrictHostKeyChecking=no $SSL_KEY $SERVER_USER@$SERVER_IP:~/ssl/key.pem
+    
     - scp -o StrictHostKeyChecking=no docker-compose.yml nginx.conf $SERVER_USER@$SERVER_IP:~/
 
     - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "
