@@ -67,10 +67,21 @@ tf_apply:
 test_api:
   stage: test
   image: node:20-slim
+  services:
+    - name: postgres:15-alpine
+      alias: postgres
+  variables:
+    POSTGRES_USER: testuser
+    POSTGRES_PASSWORD: testpassword
+    POSTGRES_DB: ridebalance_test
+    # Sobreescribir las de .env.test
+    DATABASE_URL: "postgresql://testuser:testpassword@postgres:5432/ridebalance_test"
+    JWT_SECRET: "test-secret"
   script:
     - apt-get update -y && apt-get install -y openssl
     - npm ci
     - npx prisma generate
+    - npx prisma db push --accept-data-loss
     - npm test
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
