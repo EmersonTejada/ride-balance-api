@@ -1,5 +1,5 @@
 import { prisma } from "../prisma/index.js";
-import { ExpenseFilters, NewExpense, UpdateExpense } from "../types/expense";
+import { ExpenseFilters, NewExpense, UpdateExpense } from "../types/expense.js";
 
 export const createExpense = async (expense: NewExpense, userId: string) => {
   const newExpense = prisma.expense.create({

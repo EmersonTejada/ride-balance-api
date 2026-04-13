@@ -1,5 +1,5 @@
 import { prisma } from "../prisma/index.js";
-import { NewRide, Ride, RideFilters, UpdateRide } from "../types/rides";
+import { NewRide, Ride, RideFilters, UpdateRide } from "../types/rides.js";
 
 export const createRide = async (ride: NewRide, userId: string) => {
   const newRide = prisma.ride.create({
