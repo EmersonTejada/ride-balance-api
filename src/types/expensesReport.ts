@@ -1,4 +1,4 @@
-import { ReportPeriod } from "./report";
+import { ReportPeriod } from "./report.js";
 
 export interface ExpensesReport {
   period: ReportPeriod;

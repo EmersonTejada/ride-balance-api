@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
-    "module": "ESNext", // Use ESNext module system (ES modules)
-    "target": "ESNext", // Compile to the latest ECMAScript version
-    "moduleResolution": "node", // Resolve modules using Node.js style
+    "module": "nodenext", // Use ESNext module system (ES modules)
+    "target": "esnext", // Compile to the latest ECMAScript version
+    "moduleResolution": "nodenext", // Resolve modules using Node.js style
+    "types": ["node", "jest"],
     "esModuleInterop": true, // Enables interop between ES modules and CommonJS
+    "isolatedModules": true,
     "allowSyntheticDefaultImports": true, // Allows default imports from modules with no default export
     "strict": true, // Enables strict type-checking
     "skipLibCheck": true, // Skip type-checking declaration files (faster builds)

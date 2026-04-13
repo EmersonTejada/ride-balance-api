@@ -1,5 +1,6 @@
 import request from "supertest";
-import { app } from "../../src/app";
+import { app } from "../../src/app.js";
+import {describe, expect, it} from '@jest/globals'
 
 describe("Health Check", () => {
   it("should return status 200 and UP", async () => {
