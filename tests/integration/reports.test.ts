@@ -44,7 +44,8 @@ describe('Reports Integration Tests', () => {
     await prisma.$disconnect();
   });
 
-  const queryParams = '?month=2024-01';
+  // Backend enforces a maximum of 7 days on the difference
+  const queryParams = '?from=2024-01-01&to=2024-01-07';
 
   describe('GET /api/reports/summary', () => {
     it('should return summary report', async () => {
@@ -54,7 +55,7 @@ describe('Reports Integration Tests', () => {
         .set('x-timezone', 'America/Caracas');
 
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe('Resumen obtenido exitosamente');
+      expect(response.body.message).toBe('Reporte obtenido exitosamente');
       expect(response.body.data).toHaveProperty('period');
       expect(response.body.data).toHaveProperty('kpis');
     });
@@ -68,7 +69,7 @@ describe('Reports Integration Tests', () => {
         .set('x-timezone', 'America/Caracas');
 
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe('Reporte de viajes obtenido exitosamente');
+      expect(response.body.message).toBe('Reporte obtenido exitosamente');
       expect(response.body.data).toHaveProperty('period');
     });
   });
@@ -81,7 +82,7 @@ describe('Reports Integration Tests', () => {
         .set('x-timezone', 'America/Caracas');
 
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe('Reporte de gastos obtenido exitosamente');
+      expect(response.body.message).toBe('Reporte obtenido exitosamente');
       expect(response.body.data).toHaveProperty('period');
     });
   });

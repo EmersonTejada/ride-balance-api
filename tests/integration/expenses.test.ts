@@ -92,7 +92,7 @@ describe('Expenses Integration Tests', () => {
         .send({ amount: 45 });
 
       expect(response.status).toBe(200);
-      expect(response.body.message).toBe('Gasto actualizado exitosamente');
+      expect(response.body.message).toBe('Gasto actualizado correctamente');
       expect(Number(response.body.data.amount)).toBe(45);
     });
   });

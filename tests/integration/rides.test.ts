@@ -91,7 +91,7 @@ describe('Rides Integration Tests', () => {
 
     it('should fail for not found ID', async () => {
       const response = await request(app)
-        .get('/api/rides/no-valid-id')
+        .get('/api/rides/00000000-0000-0000-0000-000000000000')
         .set('Authorization', `Bearer ${token}`);
 
       expect(response.status).toBe(404);
