@@ -6,6 +6,8 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
       .status(err.statusCode)
       .json({ message: err.message, errors: err.details });
   }
-  console.error(err);
+  if (process.env.NODE_ENV !== "test") {
+    console.error(err);
+  }
   res.status(500).json({ message: "Error interno del servidor" });
 };

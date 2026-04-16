@@ -5,10 +5,14 @@
 [![Pipeline Status](https://img.shields.io/gitlab/pipeline-status/EmersonTejada/ride-balance?branch=main&style=for-the-badge)](https://gitlab.com/EmersonTejada/ride-balance/-/commits/main)
 ![Prisma](https://img.shields.io/badge/Prisma-v7-2D3748?style=for-the-badge&logo=prisma&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Terraform](https://img.shields.io/badge/Terraform-1.14-844FBA?style=for-the-badge&logo=terraform&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![Jest](https://img.shields.io/badge/Jest-30-C21325?style=for-the-badge&logo=jest&logoColor=white)
 
 API RESTful para la gestión financiera de conductores de plataformas de ride-sharing. Permite registrar viajes, gastos, generar reportes y visualizar dashboards con métricas de ingresos y rentabilidad.
 
-> **Este proyecto utiliza GitLab CI/CD para el despliegue automático en AWS EC2.** Puedes ver la configuración del pipeline [aquí en GitLab](https://gitlab.com/EmersonTejada/ride-balance).
+> **Este proyecto utiliza GitLab CI/CD para el despliegue automático en AWS EC2, con infraestructura gestionada por Terraform y protegida por Cloudflare.** Puedes ver la configuración del pipeline [aquí en GitLab](https://gitlab.com/EmersonTejada/ride-balance).
 
 ## 📋 Descripción
 
@@ -21,7 +25,7 @@ Ride Balance API es una aplicación backend diseñada específicamente para cond
 
 ## 🔴 Live Demo (AWS EC2)
 
-¡Prueba la API en vivo! Está desplegada en una instancia EC2 de AWS corriendo en Docker, utilizando Nginx como proxy inverso y certificados de seguridad SSL de Let's Encrypt:
+¡Prueba la API en vivo! Está desplegada en una instancia EC2 de AWS (provisionada con Terraform), corriendo en Docker, con Nginx como proxy inverso, certificados SSL y protegida detrás de Cloudflare:
 
 👉 **[https://ridebalance.com](https://ridebalance.com)**
 
@@ -33,13 +37,15 @@ Los datos viajan de manera eficiente y segura a través de las siguientes capas:
 
 ```mermaid
 graph LR
-    A[React \n Frontend] -->|HTTPS| N[Nginx \n Reverse Proxy]
+    A[React \n Frontend] -->|HTTPS| CF[Cloudflare \n CDN / Proxy]
+    CF -->|HTTPS| N[Nginx \n Reverse Proxy]
     N -->|HTTP:3000| B(Express.js \n API / Backend)
     B -->|Prisma Client| C{Supabase \n PostgreSQL}
 ```
 
+- **CDN / Proxy**: Cloudflare como proxy DNS, protección DDoS y capa de seguridad perimetral.
 - **Frontend**: SPA construida en React (Consumidor principal).
-- **Proxy Inverso**: Nginx para manejar certificados SSL y enrutar las peticiones seguras al contendor de la API.
+- **Proxy Inverso**: Nginx para manejar certificados SSL, compresión gzip y enrutar las peticiones seguras al contenedor de la API.
 - **Backend**: Servidor Express con validación Zod y autenticación JWT.
 - **ORM**: Prisma para garantizar la seguridad de tipos entre TypeScript y la BD.
 - **Base de Datos**: PostgreSQL alojada remotamente en Supabase.
@@ -51,6 +57,7 @@ La API sigue una arquitectura modular:
 ```
 src/
 ├── app.ts                    # Punto de entrada de la aplicación
+├── server.ts                 # Arranque del servidor HTTP
 ├── controllers/              # Controladores de rutas
 ├── errors/                   # Manejo de errores personalizados
 ├── middlewares/              # Middlewares (auth, validación, errores)
@@ -62,6 +69,18 @@ src/
 ├── types/                   # Definiciones de tipos TypeScript
 ├── utils/                   # Utilidades
 └── generated/               # Cliente Prisma generado
+
+terraform/
+├── providers.tf             # Proveedores AWS + Cloudflare y backend S3
+├── main.tf                  # Recursos: EC2, Security Groups, Cloudflare DNS
+└── outputs.tf               # Outputs (IP pública del servidor)
+
+tests/
+├── unit/
+│   ├── controllers/         # Tests unitarios de controladores
+│   ├── models/              # Tests unitarios de modelos
+│   └── services/            # Tests unitarios de servicios
+└── integration/             # Tests de integración (API endpoints completos)
 ```
 
 ## 🚀 Características
@@ -72,6 +91,9 @@ src/
 - **TypeScript**: Tipado estático completo
 - **Timezone awareness**: Soporte para zonas horarias en reportes
 - **ES Modules**: Módulos ES modernos
+- **Infrastructure as Code**: Infraestructura gestionada con Terraform (AWS + Cloudflare)
+- **Seguridad perimetral**: Cloudflare como proxy DNS con protección DDoS
+- **Testing automatizado**: Suite completa de tests unitarios e integración con Jest y Supertest
 
 ## 📦 Dependencias Principales
 
@@ -85,6 +107,8 @@ src/
 | bcrypt | Hashing de contraseñas |
 | date-fns | Manipulación de fechas |
 | cors | Configuración de CORS |
+| Jest 30 | Framework de testing |
+| Supertest | Testing de endpoints HTTP |
 
 ## 🔧 Requisitos del Sistema
 
@@ -154,11 +178,14 @@ docker compose -f docker-compose.dev.yml up --build -d
 
 ## 🔄 Pipeline CI/CD (GitLab)
 
-El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con 3 etapas principales:
+El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con **6 etapas** que cubren infraestructura, testing, build y despliegue:
 
-1. **Test**: Ejecuta y valida la suite de pruebas unitarias/integración de la aplicación usando Jest, y el emulador VM de node.
-2. **Build**: Construye en paralelo la imagen de Docker para los entornos y los sube al Container Registry de GitLab.
-3. **Deploy**: Despliega automáticamente en una instancia de AWS EC2 mediante SSH. Se encarga de descargar las imágenes, aplicar las migraciones con Prisma y reiniciar los servicios (API y Nginx Proxy).
+1. **Infra Validate**: Ejecuta `terraform validate` para verificar la sintaxis y consistencia de los archivos Terraform. Se activa en MRs hacia `main` o en pushes a `develop`/`main` cuando hay cambios en `terraform/`.
+2. **Infra Plan**: Genera un plan de ejecución (`terraform plan`) y lo guarda como artefacto para revisión. Solo se ejecuta en la rama `main`.
+3. **Infra Apply**: Aplica los cambios de infraestructura con `terraform apply` de forma **manual** (requiere aprobación). Exporta la IP del servidor como variable para las etapas siguientes.
+4. **Test**: Ejecuta la suite completa de pruebas unitarias e integración usando Jest, Supertest y un servicio PostgreSQL efímero en el runner.
+5. **Build**: Construye la imagen de Docker de producción (multi-stage) y la sube al Container Registry de GitLab. Genera imágenes separadas para `staging` y `production`.
+6. **Deploy**: Despliega en la instancia EC2 mediante SSH. Transfiere certificados SSL, `docker-compose.yml` y `nginx.conf` al servidor, descarga las imágenes, aplica migraciones con Prisma y reinicia los servicios. Requiere **aprobación manual** en producción.
 
 *(Estado en tiempo real del Pipeline)*
 [![pipeline status](https://gitlab.com/EmersonTejada/ride-balance/badges/main/pipeline.svg)](https://gitlab.com/EmersonTejada/ride-balance/-/commits/main)
@@ -170,10 +197,14 @@ El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con 3
 | `npm run dev` | Inicia el servidor con hot-reload usando nodemon |
 | `npm run build` | Compila TypeScript a JavaScript |
 | `npm run start` | Ejecuta la aplicación compilada |
-| `npm run test` | Ejecuta la suite de pruebas con Jest |
+| `npm run test` | Ejecuta la suite completa de pruebas (unit + integration) |
+| `npm run test:unit` | Ejecuta solo las pruebas unitarias |
+| `npm run test:integration` | Ejecuta solo las pruebas de integración |
 | `npm run docker:dev` | Inicia el entorno Docker de desarrollo (API + DB local) |
 | `npm run docker:stop`| Detiene los servicios de Docker local en desarrollo |
 | `npm run docker:logs`| Muestra los logs en vivo de los contenedores Docker dev |
+| `npm run docker:test`| Levanta la base de datos de testing en Docker |
+| `npm run docker:test:setup`| Aplica el schema Prisma a la BD de testing |
 
 ## 🔐 Autenticación
 
@@ -791,6 +822,10 @@ La API utiliza una estructura consistente para el manejo de errores:
 - **Autorización**: Validación requerida del esquema Bearer
 - **Validación**: Todos los inputs son validados con Zod
 - **SQL Injection**: Previsto mediante Prisma ORM
+- **Cloudflare Proxy**: Todo el tráfico pasa por Cloudflare (protección DDoS, WAF, rate limiting)
+- **Security Groups**: La instancia EC2 solo acepta tráfico HTTP/HTTPS desde IPs de Cloudflare (Prefix List dinámica gestionada por Terraform)
+- **SSL/TLS**: Nginx configurado con TLSv1.2 y TLSv1.3, ciphers seguros y session cache
+- **Default Server Block**: Nginx rechaza (444) conexiones directas por IP o dominios no autorizados
 
 ## 📊 Modelos de Datos
 
@@ -830,7 +865,140 @@ La API utiliza una estructura consistente para el manejo de errores:
 }
 ```
 
-## 🧪 Desarrollo
+## 🧪 Testing
+
+El proyecto cuenta con una suite de pruebas automatizadas organizada en dos niveles:
+
+### Tests Unitarios
+
+Utilizan **Jest** con mocks para aislar cada capa (controllers, models, services) sin dependencias externas:
+
+```bash
+npm run test:unit
+```
+
+**Cobertura de tests unitarios:**
+| Capa | Módulos Testeados |
+|------|-------------------|
+| Controllers | Auth, Rides, Expenses, Reports, Dashboard |
+| Models | Auth, Rides, Expenses |
+| Services | Dashboard |
+
+### Tests de Integración
+
+Utilizan **Supertest** contra la app Express real con una base de datos PostgreSQL dedicada (Dockerizada) para validar flujos completos:
+
+```bash
+# 1. Levantar la BD de testing
+npm run docker:test
+
+# 2. Aplicar el schema
+npm run docker:test:setup
+
+# 3. Ejecutar tests de integración
+npm run test:integration
+```
+
+**Módulos con tests de integración:** Health, Auth, Rides, Expenses, Reports, Dashboard.
+
+### Ejecutar Suite Completa
+
+```bash
+npm test
+```
+> Ejecuta secuencialmente: tests unitarios → tests de integración.
+
+---
+
+## 🌐 Infraestructura como Código (Terraform)
+
+Toda la infraestructura de producción está definida y gestionada con **Terraform**, permitiendo crear, modificar y versionar los recursos de forma declarativa.
+
+### Proveedores
+
+| Proveedor | Versión | Propósito |
+|-----------|---------|-----------|
+| `hashicorp/aws` | ~> 6.0 | Gestión de recursos AWS (EC2, Security Groups, AMI) |
+| `cloudflare/cloudflare` | ~> 5 | Gestión de DNS y proxy de Cloudflare |
+
+### Backend Remoto (S3)
+
+El estado de Terraform se almacena de forma remota en un bucket **S3** con cifrado habilitado y lock nativo mediante archivos de bloqueo:
+
+```hcl
+backend "s3" {
+  bucket       = "ridebalance-terraform-state-..."
+  key          = "ride-balance/terraform.tfstate"
+  region       = "us-east-2"
+  encrypt      = true
+  use_lockfile = true
+}
+```
+
+Esto permite:
+- **Colaboración segura**: Múltiples desarrolladores pueden trabajar con el estado compartido.
+- **Prevención de conflictos**: El lockfile evita aplicaciones simultáneas.
+- **Cifrado en reposo**: El archivo de estado se almacena cifrado.
+
+### Recursos Gestionados
+
+#### AWS EC2
+- **Instancia**: `t3.micro` con Ubuntu 22.04 (AMI más reciente).
+- **User Data**: Script de inicialización que instala Docker y Docker Compose automáticamente al crear la instancia.
+- **Key Pair**: Acceso SSH mediante par de claves (`ride-balance-key`).
+
+#### AWS Security Group
+- **Puerto 443 (HTTPS)**: Solo acepta tráfico desde IPs de Cloudflare (Prefix List dinámica).
+- **Puerto 80 (HTTP)**: Solo acepta tráfico desde IPs de Cloudflare (para redirección a HTTPS).
+- **Puerto 22 (SSH)**: Abierto para administración remota y despliegue CI/CD.
+- **Egress**: Todo el tráfico saliente permitido.
+
+#### AWS EC2 Managed Prefix List
+- Lista dinámica que se sincroniza automáticamente con los rangos IPv4 de Cloudflare usando el data source `cloudflare_ip_ranges`.
+- Garantiza que la instancia EC2 **solo sea accesible a través de Cloudflare**, bloqueando tráfico directo por IP.
+
+#### Cloudflare DNS
+- **Registro A**: Apunta `ridebalance.com` a la IP pública de la instancia EC2.
+- **Proxy habilitado**: El tráfico pasa por la red de Cloudflare (CDN, protección DDoS, WAF).
+
+### Comandos Terraform
+
+```bash
+cd terraform
+
+# Inicializar (descarga proveedores y configura backend S3)
+terraform init
+
+# Validar la configuración
+terraform validate
+
+# Ver plan de cambios
+terraform plan
+
+# Aplicar cambios
+terraform apply
+```
+
+> ⚠️ Los comandos `plan` y `apply` en producción se ejecutan a través del pipeline CI/CD, donde `apply` requiere **aprobación manual**.
+
+---
+
+## 🔀 Nginx (Reverse Proxy)
+
+Nginx actúa como punto de entrada HTTP/HTTPS en la instancia EC2, corriendo como contenedor Docker junto a la API:
+
+### Características de la configuración
+
+- **Redirección HTTP → HTTPS**: Todo el tráfico en puerto 80 se redirige a 443.
+- **SSL/TLS**: Configurado con TLSv1.2 y TLSv1.3, ciphers seguros y session cache de 10 minutos.
+- **Gzip**: Compresión habilitada para `text/plain`, `text/css`, `application/json` y `application/javascript`.
+- **Default Server Block**: Retorna 444 (cierra conexión) para cualquier petición que no sea dirigida a `ridebalance.com`, protegiendo contra escaneos por IP directa.
+- **Proxy Pass**: Las peticiones a `/api/` se reenvían al contenedor de la API (`ride-balance-api:3000`) con los headers `X-Real-IP`, `X-Forwarded-For` y `X-Forwarded-Proto`.
+- **Health Check silencioso**: El endpoint `/api/health` no genera logs de acceso.
+
+---
+
+## 🛠️ Desarrollo
 
 ### Estructura de Archivos Generados
 
