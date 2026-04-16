@@ -8,7 +8,7 @@ stages:
 
 variables:
   IMAGE_STAGING: $CI_REGISTRY_IMAGE:staging
-  IMAGE_PROD: $CI_REGISTRY_IMAGE:latest
+  IMAGE_PROD: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
 
 .terraform_base:
   image: 
@@ -16,9 +16,6 @@ variables:
     entrypoint: [""]
   before_script:
     - cd terraform
-    - echo "Validando presencia de credenciales..."
-    - if [ -z "$AWS_ACCESS_KEY_ID" ]; then echo "Access Key está VACÍA"; else echo "Access Key tiene contenido"; fi
-    - echo "La región detectada es -> $AWS_DEFAULT_REGION"
     - terraform init
 
 tf_validate:
@@ -67,10 +64,21 @@ tf_apply:
 test_api:
   stage: test
   image: node:20-slim
+  services:
+    - name: postgres:15-alpine
+      alias: postgres
+  variables:
+    POSTGRES_USER: testuser
+    POSTGRES_PASSWORD: testpassword
+    POSTGRES_DB: ridebalance_test
+    # Sobreescribir las de .env.test
+    DATABASE_URL: "postgresql://testuser:testpassword@postgres:5432/ridebalance_test"
+    JWT_SECRET: "test-secret"
   script:
     - apt-get update -y && apt-get install -y openssl
     - npm ci
     - npx prisma generate
+    - npx prisma db push --accept-data-loss
     - npm test
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
