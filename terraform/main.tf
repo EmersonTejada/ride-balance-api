@@ -31,6 +31,15 @@ resource "cloudflare_dns_record" "api_dns" {
   ttl     = 1 
 }
 
+resource "cloudflare_dns_record" "deploy_dns" {
+  zone_id = data.cloudflare_zone.my_zone.id
+  name = "deploy"
+  content = aws_instance.ride_balance_server.public_ip 
+  type = "A"
+  proxied = false
+  ttl = 3600
+}
+
 resource "aws_security_group" "ride_balance_sg" {
   name        = "ride-balance-sg"
   description = "Ride Balance Security Group"
