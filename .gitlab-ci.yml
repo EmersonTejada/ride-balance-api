@@ -15,7 +15,7 @@ variables:
     name: hashicorp/terraform:1.14
     entrypoint: [""]
   before_script:
-    - cd terraform
+    - cd deployments/terraform
     - terraform init
 
 tf_validate:
@@ -26,10 +26,10 @@ tf_validate:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "main"
       changes:
-        - terraform/*
+        - deployments/terraform/*
     - if: $CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "main"
       changes:
-        - terraform/*
+        - deployments/terraform/*
 
 tf_plan:
   extends: .terraform_base
@@ -42,7 +42,7 @@ tf_plan:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
-        - terraform/*
+        - deployments/terraform/*
 
 tf_apply:
   extends: .terraform_base
@@ -56,7 +56,7 @@ tf_apply:
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
-        - terraform/*
+        - deployments/terraform/*
       when: manual 
   dependencies:
     - tf_plan  
@@ -71,7 +71,6 @@ test_api:
     POSTGRES_USER: testuser
     POSTGRES_PASSWORD: testpassword
     POSTGRES_DB: ridebalance_test
-    # Sobreescribir las de .env.test
     DATABASE_URL: "postgresql://testuser:testpassword@postgres:5432/ridebalance_test"
     JWT_SECRET: "test-secret"
   script:
@@ -135,7 +134,10 @@ deploy_production:
     - scp -o StrictHostKeyChecking=no $SSL_CERT $SERVER_USER@$SERVER_HOST:~/ssl/cert.pem
     - scp -o StrictHostKeyChecking=no $SSL_KEY $SERVER_USER@$SERVER_HOST:~/ssl/key.pem
     
-    - scp -o StrictHostKeyChecking=no docker-compose.yml nginx.conf $SERVER_USER@$SERVER_HOST:~/
+    - scp -o StrictHostKeyChecking=no deployments/docker/docker-compose.yml deployments/docker/docker-compose.monitor.yml $SERVER_USER@$SERVER_HOST:~/
+    - scp -o StrictHostKeyChecking=no deployments/nginx/nginx.conf $SERVER_USER@$SERVER_HOST:~/
+    - scp -o StrictHostKeyChecking=no deployments/promtail/config.yml $SERVER_USER@$SERVER_HOST:~/deployments/promtail/
+    - scp -o StrictHostKeyChecking=no deployments/prometheus/prometheus.yml $SERVER_USER@$SERVER_HOST:~/deployments/prometheus/
 
     - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "
 
@@ -146,7 +148,7 @@ deploy_production:
       export PRODUCTION_JWT_SECRET=$PRODUCTION_JWT_SECRET &&
       export PORT=$PORT &&
 
-      docker compose pull &&
+      docker compose -f docker-compose.yml -f docker-compose.monitor.yml pull &&
 
       docker compose run --rm ride-balance-api npx prisma migrate deploy &&
 

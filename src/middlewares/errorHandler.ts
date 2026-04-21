@@ -6,6 +6,15 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
       .status(err.statusCode)
       .json({ message: err.message, errors: err.details });
   }
+
+  if (err.name === "HealthError") { 
+    return res.status(503).json({
+      status: "unhealthy",
+      database: "disconnected",
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   if (process.env.NODE_ENV !== "test") {
     console.error(err);
   }

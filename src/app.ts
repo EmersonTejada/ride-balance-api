@@ -7,6 +7,7 @@ import { authRouter } from "./routes/auth.route.js";
 import { expensesRouter } from "./routes/expenses.route.js";
 import { reportsRouter } from "./routes/reports.route.js";
 import { dashboardRouter } from "./routes/dashboard.route.js";
+import { healthRouter } from "./routes/health.route.js";
 
 const app = express();
 app.use(
@@ -18,20 +19,12 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const PORT = process.env.PORT;
-
-app.get("/api/health", (req, res) => {
-  res.status(200).json({
-    status: "UP",
-    environment: process.env.NODE_ENV || "development",
-  });
-});
-
 app.use("/api/rides", ridesRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/expenses", expensesRouter);
 app.use("/api/reports", reportsRouter);
 app.use("/api/dashboard", dashboardRouter);
+app.use("/api/health", healthRouter);
 app.use(errorHandler);
 
 export { app };
