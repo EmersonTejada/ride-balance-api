@@ -130,7 +130,7 @@ deploy_production:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
-    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl"
+    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl ~/deployments/promtail ~/deployments/prometheus"
     - scp -o StrictHostKeyChecking=no $SSL_CERT $SERVER_USER@$SERVER_HOST:~/ssl/cert.pem
     - scp -o StrictHostKeyChecking=no $SSL_KEY $SERVER_USER@$SERVER_HOST:~/ssl/key.pem
     
