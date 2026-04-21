@@ -85,7 +85,7 @@ data "aws_ami" "ubuntu" {
 
 resource "aws_instance" "ride_balance_server" {
   ami           = data.aws_ami.ubuntu.id
-  instance_type = "t3.micro"
+  instance_type = "t3.small"
 
   vpc_security_group_ids = [aws_security_group.ride_balance_sg.id]
 
