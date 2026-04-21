@@ -15,7 +15,7 @@ variables:
     name: hashicorp/terraform:1.14
     entrypoint: [""]
   before_script:
-    - cd terraform
+    - cd deployments/terraform
     - terraform init
 
 tf_validate:
