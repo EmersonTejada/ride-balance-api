@@ -40,6 +40,15 @@ resource "cloudflare_dns_record" "deploy_dns" {
   ttl = 3600
 }
 
+resource "cloudflare_dns_record" "monitor_dns" {
+  zone_id = data.cloudflare_zone.my_zone.id
+  name    = "monitor"                       # Esto creará monitor.ridebalance.com
+  content = aws_instance.ride_balance_server.public_ip 
+  type    = "A"
+  proxied = true                             # Activamos el proxy de Cloudflare para seguridad y SSL
+  ttl     = 1 
+}
+
 resource "aws_security_group" "ride_balance_sg" {
   name        = "ride-balance-sg"
   description = "Ride Balance Security Group"
