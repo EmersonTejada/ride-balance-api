@@ -37,7 +37,8 @@ services:
       - ./deployments/prometheus/data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.retention.time=3d'      
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=3d'
       - '--storage.tsdb.retention.size=512MB'
     networks:
       - ride_net
@@ -60,7 +61,7 @@ services:
       - "3100:3100"
     volumes:
       - ./deployments/loki/local-config.yml:/etc/loki/local-config.yaml
-      - ./deployments/loki/data:/tmp/loki  
+      - ./deployments/loki/data:/tmp/loki
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - ride_net
