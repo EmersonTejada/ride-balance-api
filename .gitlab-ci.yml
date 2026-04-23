@@ -130,10 +130,10 @@ deploy_production:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
-    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl ~/deployments/promtail ~/deployments/prometheus/data ~/deployments/loki/data ~deployments/grafana/data &&
-      sudo chown -R 65534:65534 deployments/prometheus/data &&
-      sudo chown -R 10001:10001 deployments/loki/data &&
-      sudo chown -R 472:472 deployments/grafana/data"
+    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl ~/deployments/promtail ~/deployments/prometheus/data ~/deployments/loki/data ~/deployments/grafana/data &&
+      sudo chown -R 65534:65534 ~/deployments/prometheus/data &&
+      sudo chown -R 10001:10001 ~/deployments/loki/data &&
+      sudo chown -R 472:472 ~/deployments/grafana/data"
     - scp -o StrictHostKeyChecking=no $SSL_CERT $SERVER_USER@$SERVER_HOST:~/ssl/cert.pem
     - scp -o StrictHostKeyChecking=no $SSL_KEY $SERVER_USER@$SERVER_HOST:~/ssl/key.pem
 
@@ -160,7 +160,7 @@ deploy_production:
 
       docker compose exec -T nginx nginx -s reload &&
 
-      docker system prune -af --volumes
+      docker system prune -af 
       "
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
