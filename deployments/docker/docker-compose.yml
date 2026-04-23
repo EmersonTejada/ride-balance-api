@@ -9,6 +9,11 @@ services:
       - PORT=${PORT}
     networks:
       - ride_net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"  
 
   nginx:
     image: nginx:alpine
