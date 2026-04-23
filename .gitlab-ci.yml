@@ -11,7 +11,7 @@ variables:
   IMAGE_PROD: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
 
 .terraform_base:
-  image: 
+  image:
     name: hashicorp/terraform:1.14
     entrypoint: [""]
   before_script:
@@ -52,14 +52,14 @@ tf_apply:
     - echo "SERVER_IP=$(terraform output -raw server_public_ip)" > ../../server.env
   artifacts:
     reports:
-      dotenv: server.env  
+      dotenv: server.env
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       changes:
         - deployments/terraform/*
-      when: manual 
+      when: manual
   dependencies:
-    - tf_plan  
+    - tf_plan
 
 test_api:
   stage: test
@@ -130,10 +130,13 @@ deploy_production:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
-    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl ~/deployments/promtail ~/deployments/prometheus/data ~/deployments/loki/data ~deployments/grafana/data"
+    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl ~/deployments/promtail ~/deployments/prometheus/data ~/deployments/loki/data ~deployments/grafana/data &&
+      sudo chown -R 65534:65534 deployments/prometheus/data &&
+      sudo chown -R 10001:10001 deployments/loki/data &&
+      sudo chown -R 472:472 deployments/grafana/data &&"
     - scp -o StrictHostKeyChecking=no $SSL_CERT $SERVER_USER@$SERVER_HOST:~/ssl/cert.pem
     - scp -o StrictHostKeyChecking=no $SSL_KEY $SERVER_USER@$SERVER_HOST:~/ssl/key.pem
-    
+
     - scp -o StrictHostKeyChecking=no deployments/docker/docker-compose.yml deployments/docker/docker-compose.monitor.yml $SERVER_USER@$SERVER_HOST:~/
     - scp -o StrictHostKeyChecking=no deployments/nginx/nginx.conf $SERVER_USER@$SERVER_HOST:~/
     - scp -o StrictHostKeyChecking=no deployments/promtail/config.yml $SERVER_USER@$SERVER_HOST:~/deployments/promtail/
@@ -157,15 +160,14 @@ deploy_production:
 
       docker compose exec -T nginx nginx -s reload &&
 
-      docker image prune -f
+      docker system prune -af --volumes
       "
   rules:
     - if: $CI_COMMIT_BRANCH == "main"
       when: manual
 
-    - when: never  
+    - when: never
 
-  environment: 
+  environment:
     name: production
     url: https://ridebalance.com
-  
