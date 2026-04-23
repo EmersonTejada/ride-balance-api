@@ -1,4 +1,7 @@
+auth_enabled: false
+
 common:
+  instance_addr: 127.0.0.1
   path_prefix: /tmp/loki
   storage:
     filesystem:
@@ -6,17 +9,26 @@ common:
       rules_directory: /tmp/loki/rules
   replication_factor: 1
   ring:
-    instance_addr: 127.0.0.1
     kvstore:
       store: inmemory
 
+schema_config:
+  configs:
+    - from: 2024-04-01
+      store: tsdb
+      object_store: filesystem
+      schema: v13
+      index:
+        prefix: index_
+        period: 24h
+
 compactor:
   working_directory: /tmp/loki/compactor
-  shared_store: filesystem
-  compaction_interval: 10m       
-  retention_enabled: true        
-  retention_delete_delay: 2h     
+  compaction_interval: 10m
+  retention_enabled: true
+  retention_delete_delay: 2h
   retention_delete_worker_count: 150
+  delete_request_store: filesystem
 
 limits_config:
-  retention_period: 72h          
+  retention_period: 72h
