@@ -130,7 +130,7 @@ deploy_production:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
   script:
-    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl ~/deployments/promtail ~/deployments/prometheus"
+    - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "mkdir -p ~/ssl ~/deployments/promtail ~/deployments/prometheus/data ~/deployments/loki/data ~deployments/grafana/data"
     - scp -o StrictHostKeyChecking=no $SSL_CERT $SERVER_USER@$SERVER_HOST:~/ssl/cert.pem
     - scp -o StrictHostKeyChecking=no $SSL_KEY $SERVER_USER@$SERVER_HOST:~/ssl/key.pem
     
@@ -138,6 +138,7 @@ deploy_production:
     - scp -o StrictHostKeyChecking=no deployments/nginx/nginx.conf $SERVER_USER@$SERVER_HOST:~/
     - scp -o StrictHostKeyChecking=no deployments/promtail/config.yml $SERVER_USER@$SERVER_HOST:~/deployments/promtail/
     - scp -o StrictHostKeyChecking=no deployments/prometheus/prometheus.yml $SERVER_USER@$SERVER_HOST:~/deployments/prometheus/
+    - scp -o StrictHostKeyChecking=no deployments/loki/local-config.yml $SERVER_USER@$SERVER_HOST:~/deployments/loki/
 
     - ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST "
 
@@ -152,7 +153,7 @@ deploy_production:
 
       docker compose run --rm ride-balance-api npx prisma migrate deploy &&
 
-      docker compose up -d &&
+      docker compose -f docker-compose.yml -f docker-compose.monitor.yml up -d &&
 
       docker compose exec -T nginx nginx -s reload &&
 

@@ -34,9 +34,11 @@ services:
     restart: unless-stopped
     volumes:
       - ./deployments/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - prometheus_data:/prometheus
+      - ./deployments/prometheus/data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=3d'      
+      - '--storage.tsdb.retention.size=512MB'
     networks:
       - ride_net
 
@@ -56,6 +58,9 @@ services:
     container_name: loki
     ports:
       - "3100:3100"
+    volumes:
+      - ./deployments/loki/local-config.yml:/etc/loki/local-config.yaml
+      - ./deployments/loki/data:/tmp/loki  
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - ride_net
@@ -76,5 +81,4 @@ networks:
     external: true
 
 volumes:
-  prometheus_data:
   grafana_data:
