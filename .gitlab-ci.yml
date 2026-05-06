@@ -16,6 +16,7 @@ lint:
   image: node:20-slim
   before_script:
     - npm ci
+    - npx prisma generate
   script:
     - npm run lint
   rules:
@@ -28,6 +29,7 @@ typecheck:
   image: node:20-slim
   before_script:
     - npm ci
+    - npx prisma generate
     - npx prisma generate
   script:
     - npm run typecheck
