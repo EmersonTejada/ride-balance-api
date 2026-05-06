@@ -55,7 +55,7 @@ GROUP BY day
 ORDER BY day ASC;
 `;
 
-  const incomeByDay = incomeByDayRaw.map((item) => ({
+  const incomeByDay = incomeByDayRaw.map((item: { day: Date; total: unknown }) => ({
     date: item.day.toISOString().split("T")[0],
     amount: Number(item.total).toFixed(2),
   }));
@@ -67,11 +67,11 @@ ORDER BY day ASC;
   });
 
   const totalForPercentage = incomeByPlatformRaw.reduce(
-    (sum, item) => sum + decimalToNumber(item._sum.amount),
+    (sum: number, item: { _sum: { amount: unknown } }) => sum + decimalToNumber(item._sum.amount),
     0,
   );
 
-  const incomeByPlatform = incomeByPlatformRaw.map((item) => {
+  const incomeByPlatform = incomeByPlatformRaw.map((item: { platform: string; _sum: { amount: unknown } }) => {
     const amount = decimalToNumber(item._sum.amount);
     return {
       platform: item.platform,
