@@ -1,6 +1,6 @@
 import { RequestHandler } from "express";
 import * as ridesModel from "../models/rides.model.js";
-import { NewRide, RideFilters } from "../types/rides.js";
+import { NewRide, RideFilters, RidesParams } from "../types/rides.js";
 import { AppError } from "../errors/AppError.js";
 
 export const createRide: RequestHandler<{}, {}, NewRide, {}> = async (
@@ -21,8 +21,8 @@ export const getAllRides: RequestHandler = async (req, res) => {
   res.json({ message: "Viajes obtenidos exitosamente", data: allRides });
 };
 
-export const getRideById: RequestHandler = async (req, res) => {
-  const id = req.params.id;
+export const getRideById: RequestHandler<RidesParams> = async (req, res) => {
+  const {id} = req.params;
   const ride = await ridesModel.getRideById(id, req.userId);
   if (!ride) {
     throw new AppError(`No existe un viaje con el id ${id}`, 404);
@@ -30,8 +30,8 @@ export const getRideById: RequestHandler = async (req, res) => {
   res.json({ message: "Viaje obtenido exitosamente", data: ride });
 };
 
-export const deleteRide: RequestHandler = async (req, res) => {
-  const id = req.params.id;
+export const deleteRide: RequestHandler<RidesParams> = async (req, res) => {
+  const {id} = req.params;
   const deletedRide = await ridesModel.deleteRide(id, req.userId);
   if (deletedRide.count === 0) {
     throw new AppError(`No existe un viaje con el id ${id}`, 404);
@@ -39,8 +39,8 @@ export const deleteRide: RequestHandler = async (req, res) => {
   res.json({ message: "Viaje eliminado exitosamente", data: null });
 };
 
-export const updateRide: RequestHandler = async (req, res) => {
-  const id = req.params.id;
+export const updateRide: RequestHandler<RidesParams> = async (req, res) => {
+  const {id} = req.params;
   const ride = req.body;
   const updatedRide = await ridesModel.updatedRide(id, req.userId, ride);
   if (updatedRide.length === 0) {

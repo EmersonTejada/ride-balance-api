@@ -11,44 +11,37 @@ variables:
   IMAGE_STAGING: $CI_REGISTRY_IMAGE:staging
   IMAGE_PROD: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
 
-lint:
+.validate_base:
   stage: validate
-  image: node:20-slim
+  image: node:24-slim
+  variables:
+    DATABASE_URL: "postgresql://testuser:testpassword@postgres:5432/ridebalance_test"
   before_script:
     - npm ci
     - npx prisma generate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+lint:
+  extends: .validate_base
+  stage: validate
   script:
     - npm run lint
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH == 'main'
 
 typecheck:
+  extends: .validate_base
   stage: validate
-  image: node:20-slim
-  before_script:
-    - npm ci
-    - npx prisma generate
   script:
     - npm run typecheck
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH == 'main'
 
 security_deps:
+  extends: .validate_base
   stage: validate
-  image: node:20-slim
-  before_script:
-    - npm ci
   script:
     - npm audit --audit-level=high
-  allow_failure: true
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_COMMIT_BRANCH == 'develop'
-    - if: $CI_COMMIT_BRANCH == 'main'
+  allow_failure: false
 
 .terraform_base:
   image:
@@ -103,7 +96,7 @@ tf_apply:
 
 test_api:
   stage: test
-  image: node:20-slim
+  image: node:24-slim
   services:
     - name: postgres:15-alpine
       alias: postgres
