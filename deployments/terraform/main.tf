@@ -52,18 +52,19 @@ resource "cloudflare_dns_record" "monitor_dns" {
 resource "aws_security_group" "ride_balance_sg" {
   name        = "ride-balance-sg"
   description = "Ride Balance Security Group"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port       = 443
     to_port         = 443
-    protocol        = "tcp"
+    protocol      = "tcp"
     prefix_list_ids = [aws_ec2_managed_prefix_list.cloudflare_list.id]
   }
 
   ingress {
     from_port       = 80
     to_port         = 80
-    protocol        = "tcp"
+    protocol      = "tcp"
     prefix_list_ids = [aws_ec2_managed_prefix_list.cloudflare_list.id]
   }
 
@@ -72,6 +73,22 @@ resource "aws_security_group" "ride_balance_sg" {
     to_port     = 22
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "PostgreSQL to Supabase"
+  }
+
+  egress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "HTTPS outbound"
   }
 
   egress {
@@ -95,6 +112,7 @@ data "aws_ami" "ubuntu" {
 resource "aws_instance" "ride_balance_server" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.small"
+  subnet_id    = aws_subnet.public.id
 
   vpc_security_group_ids = [aws_security_group.ride_balance_sg.id]
 
