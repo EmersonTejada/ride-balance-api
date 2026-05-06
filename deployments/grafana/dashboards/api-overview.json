@@ -1,0 +1,119 @@
+{
+  "title": "Ride Balance API Dashboard",
+  "tags": ["ride-balance", "api"],
+  "timezone": "browser",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "10s",
+  "panels": [
+    {
+      "id": 1,
+      "gridPos": {"x": 0, "y": 0, "w": 12, "h": 4},
+      "title": "HTTP Requests Total",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "sum(rate(http_requests_total[5m])) by (status_code)",
+          "legendFormat": "{{status_code}}",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "gridPos": {"x": 12, "y": 0, "w": 12, "h": 4},
+      "title": "Request Duration P95",
+      "type": "graph",
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+          "legendFormat": "P95",
+          "refId": "A"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "gridPos": {"x": 0, "y": 4, "w": 6, "h": 4},
+      "title": "Active Connections",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "http_active_connections",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {"value": null, "color": "green"},
+              {"value": 10, "color": "yellow"},
+              {"value": 50, "color": "red"}
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": 4,
+      "gridPos": {"x": 6, "y": 4, "w": 6, "h": 4},
+      "title": "Total Rides Created",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "rides_created_total",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short"}
+      }
+    },
+    {
+      "id": 5,
+      "gridPos": {"x": 12, "y": 4, "w": 6, "h": 4},
+      "title": "Total Expenses Created",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "expenses_created_total",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short"}
+      }
+    },
+    {
+      "id": 6,
+      "gridPos": {"x": 18, "y": 4, "w": 6, "h": 4},
+      "title": "Auth Attempts",
+      "type": "stat",
+      "targets": [
+        {
+          "expr": "sum(auth_attempts_total) by (success)",
+          "legendFormat": "{{success}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {"unit": "short"}
+      }
+    },
+    {
+      "id": 7,
+      "gridPos": {"x": 0, "y": 8, "w": 24, "h": 8},
+      "title": "Request Duration by Route",
+      "type": "heatmap",
+      "targets": [
+        {
+          "expr": "sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)",
+          "refId": "A"
+        }
+      ]
+    }
+  ]
+}
