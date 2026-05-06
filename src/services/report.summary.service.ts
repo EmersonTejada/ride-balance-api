@@ -72,7 +72,7 @@ GROUP BY day
 ORDER BY day ASC;
 `;
 
-  const incomeByDay = incomeByDayRaw.map((item: { day: Date; total: number }) => ({
+  const incomeByDay = incomeByDayRaw.map((item) => ({
     date: item.day.toISOString().split("T")[0],
     amount: Number(item.total).toFixed(2),
   }));
@@ -83,22 +83,22 @@ ORDER BY day ASC;
     _sum: { amount: true },
   });
 
-  const expensesByCategory = expensesByCategoryRaw.map((item: { category: string; _sum: { amount: unknown } }) => ({
+  const expensesByCategory = expensesByCategoryRaw.map((item) => ({
     category: item.category,
     amount: decimalToNumber(item._sum.amount),
   }));
 
   const expensesTotalForPercentage = expensesByCategory.reduce(
-    (sum: number, item: { amount: number }) => sum + item.amount,
+    (sum, item) => sum + item.amount,
     0,
   );
 
-  const expensesByCategoryFormatted = expensesByCategory.map((item: { amount: number }) => ({
+  const expensesByCategoryFormatted = expensesByCategory.map((item) => ({
     ...item,
     amount: item.amount.toFixed(2),
   }));
 
-  const expensesByCategoryPercentage = expensesByCategory.map((item: { amount: number; category: string }) => ({
+  const expensesByCategoryPercentage = expensesByCategory.map((item) => ({
     category: item.category,
     percentage:
       expensesTotalForPercentage > 0
@@ -113,11 +113,11 @@ ORDER BY day ASC;
   });
 
   const incomeTotalForPercentage = incomeByPlatformRaw.reduce(
-    (sum: number, item: { _sum: { amount: unknown } }) => sum + decimalToNumber(item._sum.amount),
+    (sum, item) => sum + decimalToNumber(item._sum.amount),
     0,
   );
 
-  const incomeByPlatformPercentage = incomeByPlatformRaw.map((item: { platform: string; _sum: { amount: unknown } }) => ({
+  const incomeByPlatformPercentage = incomeByPlatformRaw.map((item) => ({
     platform: item.platform,
     percentage:
       incomeTotalForPercentage > 0
