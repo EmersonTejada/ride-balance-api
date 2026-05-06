@@ -36,4 +36,7 @@ COPY --from=builder /app/prisma.config.ts ./
 
 EXPOSE 3000
 
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "const http = require('http'); http.get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1));"
+
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]
