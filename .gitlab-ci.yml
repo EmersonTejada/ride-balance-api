@@ -13,7 +13,7 @@ variables:
 
 lint:
   stage: validate
-  image: node:20-slim
+  image: node:24-slim
   before_script:
     - npm ci
     - npx prisma generate
@@ -26,7 +26,7 @@ lint:
 
 typecheck:
   stage: validate
-  image: node:20-slim
+  image: node:24-slim
   before_script:
     - npm ci
     - npx prisma generate
@@ -39,7 +39,7 @@ typecheck:
 
 security_deps:
   stage: validate
-  image: node:20-slim
+  image: node:24-slim
   before_script:
     - npm ci
   script:
@@ -103,7 +103,7 @@ tf_apply:
 
 test_api:
   stage: test
-  image: node:20-slim
+  image: node:24-slim
   services:
     - name: postgres:15-alpine
       alias: postgres
