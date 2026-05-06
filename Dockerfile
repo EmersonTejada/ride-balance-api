@@ -1,4 +1,4 @@
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
 
 RUN apt-get update -y && apt-get install -y openssl
 
@@ -18,7 +18,7 @@ RUN npm run build
 
 RUN npm prune --production
 
-FROM node:20-slim AS runner
+FROM node:24-slim AS runner
 
 RUN apt-get update -y && apt-get install -y openssl
 
