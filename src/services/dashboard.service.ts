@@ -83,7 +83,7 @@ ORDER BY day ASC;
 
   // Crear mapa de ingresos por día
   const incomeMap = new Map<string, number>();
-  incomeByDayRaw.forEach((item) => {
+  incomeByDayRaw.forEach((item: { day: Date; total: unknown }) => {
     const dateKey = item.day.toISOString().split("T")[0];
     incomeMap.set(dateKey, Number(item.total));
   });
