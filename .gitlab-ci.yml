@@ -159,6 +159,39 @@ build_production:
   rules:
     - if: $CI_COMMIT_BRANCH == 'main'
 
+trivy_image_scan:
+  stage: build
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  variables:
+    TRIVY_SEVERITY: "CRITICAL,HIGH"
+    TRIVY_CACHE_DIR: ".trivy"
+  script:
+    - trivy image --exit-code 1 --severity $TRIVY_SEVERITY $IMAGE_PROD
+  needs:
+    - job: build_production
+      optional: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+trivy_fs_scan:
+  stage: validate
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  variables:
+    TRIVY_SEVERITY: "CRITICAL,HIGH"
+    TRIVY_CACHE_DIR: ".trivy"
+  before_script:
+    - trivy fs --download-db-only
+  script:
+    - trivy fs --exit-code 1 --severity $TRIVY_SEVERITY .
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
 deploy_staging:
   stage: deploy
   script:
