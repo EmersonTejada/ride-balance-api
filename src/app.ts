@@ -8,6 +8,7 @@ import { reportsRouter } from "./routes/reports.route.js";
 import { dashboardRouter } from "./routes/dashboard.route.js";
 import { healthRouter } from "./routes/health.route.js";
 import { metricsRouter } from "./routes/metrics.route.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 app.use(
