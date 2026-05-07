@@ -123,10 +123,15 @@ build_staging:
   services:
     - name: docker:28.2.2-dind
       alias: docker
+  variables:
+    DOCKER_BUILDKIT: "1"
+    DATABASE_URL: $DATABASE_URL
+  environment:
+    name: staging
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build -t $IMAGE_STAGING .
+    - docker build --build-arg DATABASE_URL=$DATABASE_URL -t $IMAGE_STAGING .
     - docker push $IMAGE_STAGING
   needs:
     - job: lint
@@ -144,10 +149,15 @@ build_production:
   services:
     - name: docker:28.2.2-dind
       alias: docker
+  variables:
+    DOCKER_BUILDKIT: "1"
+    DATABASE_URL: $DATABASE_URL
+  environment:
+    name: production
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build -t $IMAGE_PROD .
+    - docker build --build-arg DATABASE_URL=$DATABASE_URL -t $IMAGE_PROD .
     - docker push $IMAGE_PROD
   needs:
     - job: lint
@@ -230,8 +240,8 @@ deploy_production:
       docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
 
       export IMAGE_PROD=$IMAGE_PROD &&
-      export PRODUCTION_DATABASE_URL=$PRODUCTION_DATABASE_URL &&
-      export PRODUCTION_JWT_SECRET=$PRODUCTION_JWT_SECRET &&
+      export DATABASE_URL=$DATABASE_URL &&
+      export JWT_SECRET=$JWT_SECRET &&
       export PORT=$PORT &&
 
       docker compose -f docker-compose.yml -f docker-compose.monitor.yml pull &&

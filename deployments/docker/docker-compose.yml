@@ -9,8 +9,8 @@ services:
       retries: 3
       start_period: 10s
     environment:
-      - DATABASE_URL=${PRODUCTION_DATABASE_URL}
-      - JWT_SECRET=${PRODUCTION_JWT_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
       - NODE_ENV=production
       - PORT=${PORT}
     networks:
