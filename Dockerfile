@@ -1,5 +1,7 @@
 FROM node:24-slim AS builder
 
+ARG DATABASE_URL
+
 RUN apt-get update -y && apt-get install -y openssl
 
 WORKDIR /app
@@ -10,7 +12,7 @@ RUN npm ci
 
 COPY prisma ./prisma/
 
-RUN npx prisma generate
+RUN DATABASE_URL=$DATABASE_URL npx prisma generate
 
 COPY . .
 
