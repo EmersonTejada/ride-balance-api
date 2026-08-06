@@ -2,7 +2,7 @@ FROM node:24-slim AS builder
 
 ARG DATABASE_URL
 
-RUN apt-get update -y && apt-get install -y openssl
+RUN RUN apt-get update -y && apt-get upgrade -y && apt-get install -y openssl
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ RUN npm prune --production
 
 FROM node:24-slim AS runner
 
-RUN apt-get update -y && apt-get install -y openssl
+RUN RUN apt-get update -y && apt-get upgrade -y && apt-get install -y openssl
 
 WORKDIR /app
 
