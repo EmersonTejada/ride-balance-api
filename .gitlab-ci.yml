@@ -1,4 +1,5 @@
 stages:
+  - validate
   - infra_validate
   - infra_plan
   - infra_apply
@@ -9,6 +10,38 @@ stages:
 variables:
   IMAGE_STAGING: $CI_REGISTRY_IMAGE:staging
   IMAGE_PROD: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHORT_SHA
+
+.validate_base:
+  stage: validate
+  image: node:24-slim
+  variables:
+    DATABASE_URL: "postgresql://testuser:testpassword@postgres:5432/ridebalance_test"
+  before_script:
+    - npm ci
+    - npx prisma generate
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'develop'
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+lint:
+  extends: .validate_base
+  stage: validate
+  script:
+    - npm run lint
+
+typecheck:
+  extends: .validate_base
+  stage: validate
+  script:
+    - npm run typecheck
+
+security_deps:
+  extends: .validate_base
+  stage: validate
+  script:
+    - npm audit --audit-level=high
+  allow_failure: false
 
 .terraform_base:
   image:
@@ -63,7 +96,7 @@ tf_apply:
 
 test_api:
   stage: test
-  image: node:20-slim
+  image: node:24-slim
   services:
     - name: postgres:15-alpine
       alias: postgres
@@ -88,12 +121,25 @@ build_staging:
   stage: build
   image: docker:28.2.2
   services:
-    - docker:28.2.2-dind
+    - name: docker:28.2.2-dind
+      alias: docker
+  variables:
+    DOCKER_BUILDKIT: "1"
+    DATABASE_URL: $DATABASE_URL
+  environment:
+    name: staging
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build -t $IMAGE_STAGING .
+    - docker build --build-arg DATABASE_URL=$DATABASE_URL -t $IMAGE_STAGING .
     - docker push $IMAGE_STAGING
+  needs:
+    - job: lint
+      optional: true
+    - job: typecheck
+      optional: true
+    - job: security_deps
+      optional: true
   rules:
     - if: $CI_COMMIT_BRANCH == 'develop'
 
@@ -101,13 +147,59 @@ build_production:
   stage: build
   image: docker:28.2.2
   services:
-    - docker:28.2.2-dind
+    - name: docker:28.2.2-dind
+      alias: docker
+  variables:
+    DOCKER_BUILDKIT: "1"
+    DATABASE_URL: $DATABASE_URL
+  environment:
+    name: production
   before_script:
     - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
   script:
-    - docker build -t $IMAGE_PROD .
+    - docker build --build-arg DATABASE_URL=$DATABASE_URL -t $IMAGE_PROD .
     - docker push $IMAGE_PROD
+  needs:
+    - job: lint
+      optional: true
+    - job: typecheck
+      optional: true
+    - job: security_deps
+      optional: true
   rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+trivy_image_scan:
+  stage: build
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  variables:
+    TRIVY_SEVERITY: "CRITICAL,HIGH"
+    TRIVY_CACHE_DIR: ".trivy"
+  script:
+    - trivy image --exit-code 1 --severity $TRIVY_SEVERITY $IMAGE_PROD
+  needs:
+    - job: build_production
+      optional: true
+  rules:
+    - if: $CI_COMMIT_BRANCH == 'main'
+
+trivy_fs_scan:
+  stage: validate
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  variables:
+    TRIVY_SEVERITY: "CRITICAL,HIGH"
+    TRIVY_CACHE_DIR: ".trivy"
+  before_script:
+    - trivy fs --download-db-only
+  script:
+    - trivy fs --exit-code 1 --severity $TRIVY_SEVERITY .
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    - if: $CI_COMMIT_BRANCH == 'develop'
     - if: $CI_COMMIT_BRANCH == 'main'
 
 deploy_staging:
@@ -148,8 +240,8 @@ deploy_production:
       docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY &&
 
       export IMAGE_PROD=$IMAGE_PROD &&
-      export PRODUCTION_DATABASE_URL=$PRODUCTION_DATABASE_URL &&
-      export PRODUCTION_JWT_SECRET=$PRODUCTION_JWT_SECRET &&
+      export DATABASE_URL=$DATABASE_URL &&
+      export JWT_SECRET=$JWT_SECRET &&
       export PORT=$PORT &&
 
       docker compose -f docker-compose.yml -f docker-compose.monitor.yml pull &&

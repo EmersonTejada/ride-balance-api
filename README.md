@@ -8,11 +8,13 @@
 ![Terraform](https://img.shields.io/badge/Terraform-1.14-844FBA?style=for-the-badge&logo=terraform&logoColor=white)
 ![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=for-the-badge&logo=cloudflare&logoColor=white)
 ![Nginx](https://img.shields.io/badge/Nginx-009639?style=for-the-badge&logo=nginx&logoColor=white)
+![Grafana](https://img.shields.io/badge/Grafana-F46800?style=for-the-badge&logo=grafana&logoColor=white)
+![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)
 ![Jest](https://img.shields.io/badge/Jest-30-C21325?style=for-the-badge&logo=jest&logoColor=white)
 
 API RESTful para la gestión financiera de conductores de plataformas de ride-sharing. Permite registrar viajes, gastos, generar reportes y visualizar dashboards con métricas de ingresos y rentabilidad.
 
-> **Este proyecto utiliza GitLab CI/CD para el despliegue automático en AWS EC2, con infraestructura gestionada por Terraform y protegida por Cloudflare.** Puedes ver la configuración del pipeline [aquí en GitLab](https://gitlab.com/EmersonTejada/ride-balance).
+> **Este proyecto utiliza GitLab CI/CD para el despliegue automático en AWS EC2, con infraestructura gestionada por Terraform, protegida por Cloudflare y monitorizada con Grafana, Prometheus y Loki.** Puedes ver la configuración del pipeline [aquí en GitLab](https://gitlab.com/EmersonTejada/ride-balance).
 
 ## 📋 Descripción
 
@@ -27,7 +29,7 @@ Ride Balance API es una aplicación backend diseñada específicamente para cond
 
 ¡Prueba la API en vivo! Está desplegada en una instancia EC2 de AWS (provisionada con Terraform), corriendo en Docker, con Nginx como proxy inverso, certificados SSL y protegida detrás de Cloudflare:
 
-👉 **[https://ridebalance.com](https://ridebalance.com)**
+👉 **[https://ridebalance.com/api](https://ridebalance.com/api)**
 
 ---
 
@@ -40,15 +42,23 @@ graph LR
     A[React \n Frontend] -->|HTTPS| CF[Cloudflare \n CDN / Proxy]
     CF -->|HTTPS| N[Nginx \n Reverse Proxy]
     N -->|HTTP:3000| B(Express.js \n API / Backend)
+    N -->|Proxy| V[Vercel \n Frontend Host]
     B -->|Prisma Client| C{Supabase \n PostgreSQL}
+    B -.->|Logs| PR[Promtail]
+    PR -.->|Push| L[Loki]
+    P[Prometheus] -.->|Scrape| NE[Node Exporter]
+    P -.->|Scrape| CA[cAdvisor]
+    L -.-> G[Grafana \n Dashboards]
+    P -.-> G
 ```
 
 - **CDN / Proxy**: Cloudflare como proxy DNS, protección DDoS y capa de seguridad perimetral.
-- **Frontend**: SPA construida en React (Consumidor principal).
-- **Proxy Inverso**: Nginx para manejar certificados SSL, compresión gzip y enrutar las peticiones seguras al contenedor de la API.
+- **Frontend**: SPA construida en React, hosteada en Vercel y servida a través de Nginx como proxy inverso.
+- **Proxy Inverso**: Nginx para manejar certificados SSL, compresión gzip, enrutar `/api/` al backend y `/` al frontend en Vercel. También expone `monitor.ridebalance.com` para Grafana.
 - **Backend**: Servidor Express con validación Zod y autenticación JWT.
 - **ORM**: Prisma para garantizar la seguridad de tipos entre TypeScript y la BD.
 - **Base de Datos**: PostgreSQL alojada remotamente en Supabase.
+- **Observabilidad**: Stack de monitoreo con Grafana (dashboards), Prometheus + Node Exporter + cAdvisor (métricas de sistema y contenedores) y Loki + Promtail (logs centralizados).
 
 ### 🗂️ Estructura de Carpetas
 
@@ -70,10 +80,24 @@ src/
 ├── utils/                   # Utilidades
 └── generated/               # Cliente Prisma generado
 
-terraform/
-├── providers.tf             # Proveedores AWS + Cloudflare y backend S3
-├── main.tf                  # Recursos: EC2, Security Groups, Cloudflare DNS
-└── outputs.tf               # Outputs (IP pública del servidor)
+deployments/
+├── docker/
+│   ├── docker-compose.yml          # Compose de producción (API + Nginx)
+│   ├── docker-compose.dev.yml      # Compose de desarrollo (API + DB local)
+│   ├── docker-compose.test.yml     # Compose de testing (DB efímera)
+│   └── docker-compose.monitor.yml  # Compose de monitoreo (Grafana, Prometheus, Loki...)
+├── nginx/
+│   └── nginx.conf                  # Configuración de Nginx (reverse proxy)
+├── terraform/
+│   ├── providers.tf                # Proveedores AWS + Cloudflare y backend S3
+│   ├── main.tf                     # Recursos: EC2, Security Groups, Cloudflare DNS
+│   └── outputs.tf                  # Outputs (IP pública del servidor)
+├── prometheus/
+│   └── prometheus.yml              # Configuración de scrape targets
+├── loki/
+│   └── local-config.yml            # Configuración de Loki (almacenamiento, retención)
+└── promtail/
+    └── config.yml                  # Configuración de Promtail (recolección de logs)
 
 tests/
 ├── unit/
@@ -94,6 +118,7 @@ tests/
 - **Infrastructure as Code**: Infraestructura gestionada con Terraform (AWS + Cloudflare)
 - **Seguridad perimetral**: Cloudflare como proxy DNS con protección DDoS
 - **Testing automatizado**: Suite completa de tests unitarios e integración con Jest y Supertest
+- **Observabilidad**: Monitoreo con Grafana, Prometheus (métricas de sistema/contenedores) y Loki + Promtail (logs centralizados)
 
 ## 📦 Dependencias Principales
 
@@ -109,6 +134,9 @@ tests/
 | cors | Configuración de CORS |
 | Jest 30 | Framework de testing |
 | Supertest | Testing de endpoints HTTP |
+| Grafana | Dashboards de monitoreo |
+| Prometheus | Recolección de métricas |
+| Loki + Promtail | Agregación de logs |
 
 ## 🔧 Requisitos del Sistema
 
@@ -180,12 +208,12 @@ docker compose -f docker-compose.dev.yml up --build -d
 
 El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con **6 etapas** que cubren infraestructura, testing, build y despliegue:
 
-1. **Infra Validate**: Ejecuta `terraform validate` para verificar la sintaxis y consistencia de los archivos Terraform. Se activa en MRs hacia `main` o en pushes a `develop`/`main` cuando hay cambios en `terraform/`.
+1. **Infra Validate**: Ejecuta `terraform validate` para verificar la sintaxis y consistencia de los archivos Terraform. Se activa en MRs hacia `main` o en pushes a `develop`/`main` cuando hay cambios en `deployments/terraform/`.
 2. **Infra Plan**: Genera un plan de ejecución (`terraform plan`) y lo guarda como artefacto para revisión. Solo se ejecuta en la rama `main`.
 3. **Infra Apply**: Aplica los cambios de infraestructura con `terraform apply` de forma **manual** (requiere aprobación). Exporta la IP del servidor como variable para las etapas siguientes.
 4. **Test**: Ejecuta la suite completa de pruebas unitarias e integración usando Jest, Supertest y un servicio PostgreSQL efímero en el runner.
 5. **Build**: Construye la imagen de Docker de producción (multi-stage) y la sube al Container Registry de GitLab. Genera imágenes separadas para `staging` y `production`.
-6. **Deploy**: Despliega en la instancia EC2 mediante SSH. Transfiere certificados SSL, `docker-compose.yml` y `nginx.conf` al servidor, descarga las imágenes, aplica migraciones con Prisma y reinicia los servicios. Requiere **aprobación manual** en producción.
+6. **Deploy**: Despliega en la instancia EC2 mediante SSH. Transfiere certificados SSL, `docker-compose.yml`, `docker-compose.monitor.yml`, `nginx.conf` y las configuraciones del stack de monitoreo (Promtail, Prometheus, Loki) al servidor. Crea los directorios con permisos adecuados, descarga las imágenes, aplica migraciones con Prisma y reinicia los servicios (API + monitoreo). Requiere **aprobación manual** en producción.
 
 *(Estado en tiempo real del Pipeline)*
 [![pipeline status](https://gitlab.com/EmersonTejada/ride-balance/badges/main/pipeline.svg)](https://gitlab.com/EmersonTejada/ride-balance/-/commits/main)
@@ -203,8 +231,13 @@ El proyecto cuenta con un flujo CI/CD completamente automatizado en GitLab con *
 | `npm run docker:dev` | Inicia el entorno Docker de desarrollo (API + DB local) |
 | `npm run docker:stop`| Detiene los servicios de Docker local en desarrollo |
 | `npm run docker:logs`| Muestra los logs en vivo de los contenedores Docker dev |
+| `npm run docker:logs:api`| Muestra los logs en vivo solo del contenedor de la API |
+| `npm run docker:logs:db`| Muestra los logs en vivo solo del contenedor de la BD |
 | `npm run docker:test`| Levanta la base de datos de testing en Docker |
 | `npm run docker:test:setup`| Aplica el schema Prisma a la BD de testing |
+| `npm run docker:monitor`| Levanta el stack de monitoreo (Grafana, Prometheus, Loki...) |
+| `npm run docker:monitor:stop`| Detiene el stack de monitoreo |
+| `npm run docker:monitor:logs`| Muestra los logs en vivo del stack de monitoreo |
 
 ## 🔐 Autenticación
 
@@ -525,9 +558,10 @@ GET /api/rides?platform=yummy&from=2025-01-01&to=2025-01-31
 | `tolls` | Peajes |
 | `other` | Otros |
 
-**Subcategorías para `maintenance`**:
+**Subcategorías disponibles**:
 | Subcategoría | Descripción |
 |--------------|-------------|
+| `fuel_refill` | Recarga de combustible |
 | `oil_change` | Cambio de aceite |
 | `oil_refill` | Recarga de aceite |
 | `repair` | Reparación general |
@@ -535,6 +569,9 @@ GET /api/rides?platform=yummy&from=2025-01-01&to=2025-01-31
 | `tire` | Llantas |
 | `brake` | Frenos |
 | `battery` | Batería |
+| `cleaning` | Limpieza del vehículo |
+| `accessory` | Accesorios |
+| `unknown` | Otros / sin especificar |
 
 **Respuesta exitosa (201)**:
 ```json
@@ -943,7 +980,7 @@ Esto permite:
 ### Recursos Gestionados
 
 #### AWS EC2
-- **Instancia**: `t3.micro` con Ubuntu 22.04 (AMI más reciente).
+- **Instancia**: `t3.small` con Ubuntu 22.04 (AMI más reciente).
 - **User Data**: Script de inicialización que instala Docker y Docker Compose automáticamente al crear la instancia.
 - **Key Pair**: Acceso SSH mediante par de claves (`ride-balance-key`).
 
@@ -958,8 +995,9 @@ Esto permite:
 - Garantiza que la instancia EC2 **solo sea accesible a través de Cloudflare**, bloqueando tráfico directo por IP.
 
 #### Cloudflare DNS
-- **Registro A**: Apunta `ridebalance.com` a la IP pública de la instancia EC2.
-- **Proxy habilitado**: El tráfico pasa por la red de Cloudflare (CDN, protección DDoS, WAF).
+- **Registro A (`@`)**: Apunta `ridebalance.com` a la IP pública de la instancia EC2, con proxy habilitado (CDN, DDoS, WAF).
+- **Registro A (`deploy`)**: Apunta `deploy.ridebalance.com` a la IP de la instancia EC2, **sin proxy** (DNS-only), usado para conexiones SSH directas del pipeline CI/CD.
+- **Registro A (`monitor`)**: Apunta `monitor.ridebalance.com` a la IP de la instancia EC2, con proxy habilitado, para acceder a los dashboards de Grafana.
 
 ### Comandos Terraform
 
@@ -993,8 +1031,48 @@ Nginx actúa como punto de entrada HTTP/HTTPS en la instancia EC2, corriendo com
 - **SSL/TLS**: Configurado con TLSv1.2 y TLSv1.3, ciphers seguros y session cache de 10 minutos.
 - **Gzip**: Compresión habilitada para `text/plain`, `text/css`, `application/json` y `application/javascript`.
 - **Default Server Block**: Retorna 444 (cierra conexión) para cualquier petición que no sea dirigida a `ridebalance.com`, protegiendo contra escaneos por IP directa.
-- **Proxy Pass**: Las peticiones a `/api/` se reenvían al contenedor de la API (`ride-balance-api:3000`) con los headers `X-Real-IP`, `X-Forwarded-For` y `X-Forwarded-Proto`.
+- **Proxy Pass API**: Las peticiones a `/api/` se reenvían al contenedor de la API (`ride-balance-api:3000`) con los headers `X-Real-IP`, `X-Forwarded-For` y `X-Forwarded-Proto`.
+- **Proxy Pass Frontend**: Las peticiones a `/` se reenvían al frontend hosteado en Vercel (`ride-balance.vercel.app`) con SNI habilitado.
 - **Health Check silencioso**: El endpoint `/api/health` no genera logs de acceso.
+- **Server Block de Monitoreo**: `monitor.ridebalance.com` redirige al contenedor de Grafana (puerto 3000) con soporte para WebSockets (`/api/live/ws`) para dashboards en tiempo real.
+
+---
+
+## 📊 Observabilidad (Monitoreo y Logs)
+
+El proyecto incluye un stack de observabilidad completo para monitorear la salud del servidor, los contenedores y centralizar los logs de la aplicación:
+
+### Componentes
+
+| Servicio | Imagen | Propósito |
+|----------|--------|-----------|
+| **Grafana** | `grafana/grafana:latest` | Dashboards de visualización (métricas + logs) |
+| **Prometheus** | `prom/prometheus:latest` | Recolección y almacenamiento de métricas de series temporales |
+| **Node Exporter** | `prom/node-exporter:latest` | Métricas del sistema operativo (CPU, memoria, disco, red) |
+| **cAdvisor** | `gcr.io/cadvisor/cadvisor:latest` | Métricas de rendimiento de contenedores Docker |
+| **Loki** | `grafana/loki:latest` | Agregación y almacenamiento de logs (retención: 72h) |
+| **Promtail** | `grafana/promtail:latest` | Recolección de logs de contenedores Docker vía socket |
+
+### Acceso
+
+- **Grafana**: Accesible en `https://monitor.ridebalance.com` (protegido por Cloudflare).
+- **Prometheus**: Scrape cada 1 minuto a Node Exporter (`:9100`) y cAdvisor (`:8080`).
+- **Loki**: Retención de 72 horas con compactación automática cada 10 minutos.
+
+### Uso Local
+
+```bash
+# Levantar el stack de monitoreo
+npm run docker:monitor
+
+# Ver logs del stack
+npm run docker:monitor:logs
+
+# Detener el stack
+npm run docker:monitor:stop
+```
+
+> El stack de monitoreo se levanta con un Docker Compose independiente (`docker-compose.monitor.yml`) que se conecta a la red compartida `ride_net`.
 
 ---
 
