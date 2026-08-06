@@ -40,3 +40,7 @@ export type ExpenseFilters = {
   from?: string;
   to?: string;
 };
+
+export type ExpenseParams = {
+  id: string;
+};

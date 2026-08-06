@@ -1,4 +1,6 @@
-FROM node:20-slim AS builder
+FROM node:24-slim AS builder
+
+ARG DATABASE_URL
 
 RUN apt-get update -y && apt-get install -y openssl
 
@@ -10,7 +12,7 @@ RUN npm ci
 
 COPY prisma ./prisma/
 
-RUN npx prisma generate
+RUN DATABASE_URL=$DATABASE_URL npx prisma generate
 
 COPY . .
 
@@ -18,7 +20,7 @@ RUN npm run build
 
 RUN npm prune --production
 
-FROM node:20-slim AS runner
+FROM node:24-slim AS runner
 
 RUN apt-get update -y && apt-get install -y openssl
 
@@ -35,5 +37,8 @@ COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/prisma.config.ts ./
 
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD node -e "const http = require('http'); http.get('http://localhost:3000/api/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1));"
 
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/server.js"]

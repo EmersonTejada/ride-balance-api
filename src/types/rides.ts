@@ -15,3 +15,7 @@ export type RideFilters = {
   from?: string;
   to?: string;
 };
+
+export type RidesParams = {
+  id: string;
+};

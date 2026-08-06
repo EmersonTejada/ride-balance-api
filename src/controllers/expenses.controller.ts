@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { NewExpense, UpdateExpense } from "../types/expense.js";
+import { ExpenseParams, NewExpense, UpdateExpense } from "../types/expense.js";
 import * as expensesModel from "../models/expenses.model.js";
 
 export const createExpense: RequestHandler<{}, {}, NewExpense, {}> = async (
@@ -24,20 +24,20 @@ export const getAllExpenses: RequestHandler = async (
   res.json({ message: "Gastos obtenidos exitosamente", data: expenses });
 };
 
-export const getExpenseById: RequestHandler = async (req, res) => {
-    const id = req.params.id
+export const getExpenseById: RequestHandler<ExpenseParams> = async (req, res) => {
+    const {id} = req.params
     const expense = await expensesModel.getExpenseById(id, req.userId)
     res.json({message: "Gasto obtenido exitosamente", data: expense})
 }
 
-export const deleteExpense: RequestHandler = async (req, res) => {
-  const id = req.params.id;
+export const deleteExpense: RequestHandler<ExpenseParams> = async (req, res) => {
+  const {id} = req.params;
   const deletedExpense = await expensesModel.deleteExpense(id, req.userId);
   res.json({ message: "Gasto eliminado exitosamente", data: deletedExpense });
 }
 
-export const updateExpense: RequestHandler = async (req, res) => {
-    const id = req.params.id
+export const updateExpense: RequestHandler<ExpenseParams> = async (req, res) => {
+    const {id} = req.params
     const updatedExpense = await expensesModel.updateExpense(id, req.userId, req.body)
     res.json({message: "Gasto actualizado correctamente", data: updatedExpense[0]})
 }
